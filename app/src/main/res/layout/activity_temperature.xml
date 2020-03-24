@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".TemperatureActivity">
+
+    <ImageView
+        android:id="@+id/imageViewTemperature"
+        android:layout_width="match_parent"
+        android:layout_height="153dp"
+        android:foregroundGravity="center"
+        android:scaleType="fitXY"
+        android:src="@drawable/image_termo"
+        tools:layout_editor_absoluteX="149dp"
+        tools:layout_editor_absoluteY="310dp" />
+
+    <TextView
+        android:id="@+id/textViewTemperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="482dp"
+        tools:text="Temperature  Sensor Values" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TableLayout
+        android:layout_width="323dp"
+        android:layout_height="447dp"
+        android:gravity="center"
+        android:paddingLeft="40dp"
+        android:foreground="?android:attr/selectableItemBackground"
+        tools:layout_editor_absoluteX="81dp"
+        tools:layout_editor_absoluteY="116dp">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageButton
+                android:id="@+id/imageButtonDrop"
+                android:layout_width="123dp"
+                android:layout_height="137dp"
+                android:scaleType="fitXY"
+
+                app:srcCompat="@drawable/image_drop" />
+
+            <ImageButton
+                android:id="@+id/imageButtonLight"
+                android:layout_width="131dp"
+                android:layout_height="133dp"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/image_light" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageButton
+                android:id="@+id/imageButtonEKG"
+                android:layout_width="135dp"
+                android:layout_height="107dp"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/image_ekg" />
+
+            <ImageButton
+                android:id="@+id/imageButtonTermo"
+                android:layout_width="125dp"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/image_termo" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageButton
+                android:id="@+id/imageButtonESR"
+                android:layout_width="126dp"
+                android:layout_height="109dp"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/image_esr" />
+
+            <ImageButton
+                android:id="@+id/imageButtonData"
+                android:layout_width="137dp"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/image_data" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </TableLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

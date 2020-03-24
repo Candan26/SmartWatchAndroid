@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".EsrActivity">
+
+    <ImageView
+        android:id="@+id/imageViewEsr"
+        android:layout_width="wrap_content"
+        android:layout_height="87dp"
+        android:foregroundGravity="center"
+        android:scaleType="fitXY"
+        android:src="@drawable/image_esr"
+        android:layout_marginBottom="15dp"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="310dp"
+        />
+
+    <TextView
+        android:id="@+id/textViewEsr"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/colorPrimary"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="482dp"
+        tools:text="ESR Sensor Values" />
+
+</LinearLayout>

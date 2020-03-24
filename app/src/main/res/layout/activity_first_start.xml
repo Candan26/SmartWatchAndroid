@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".FirstStartActivity">
+
+    <TextView
+        android:id="@+id/textViewSearch"
+        android:layout_width="273dp"
+        android:layout_height="78dp"
+        android:layout_marginBottom="30dp"
+        android:gravity="center"
+        android:textColor="@color/colorPrimary"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="482dp"
+        tools:text="Searching for SMARTWATCH BLE API" />
+
+    <ImageButton
+        android:id="@+id/imageButtonSearch"
+        android:layout_width="103dp"
+        android:layout_height="111dp"
+        android:layout_marginBottom="30dp"
+        android:scaleType="fitXY"
+        app:srcCompat="@drawable/ic_launcher_smart_watch_frontal" />
+
+
+    <ProgressBar
+        android:id="@+id/progressBarStart"
+        android:layout_width="match_parent"
+        style="?android:progressBarStyle"
+        android:indeterminateDrawable="@drawable/pbs"
+        android:indeterminateDuration="@android:integer/config_longAnimTime"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

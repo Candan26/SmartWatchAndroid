@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".HumidityActivity">
+
+    <ImageView
+        android:id="@+id/imageViewDetail"
+        android:layout_width="193dp"
+        android:layout_height="145dp"
+        android:foregroundGravity="center"
+        android:scaleType="fitXY"
+        android:src="@drawable/drop_image_10_percent"
+        android:layout_marginBottom="15dp"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="310dp" />
+
+    <TextView
+        android:id="@+id/textViewDropAnimation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/colorPrimary"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="482dp"
+        tools:text="Humidity Sensor Values" />
+
+</LinearLayout>

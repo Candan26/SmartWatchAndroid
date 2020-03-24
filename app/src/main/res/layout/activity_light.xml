@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".LightActivity">
+
+    <ImageView
+        android:id="@+id/imageViewLight"
+        android:layout_width="287dp"
+        android:layout_height="81dp"
+        android:layout_marginBottom="15dp"
+        android:foregroundGravity="center"
+        android:scaleType="fitXY"
+        android:src="@drawable/image_light"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="310dp" />
+
+    <TextView
+        android:id="@+id/textViewLight"
+        android:layout_width="255dp"
+        android:layout_height="32dp"
+        android:gravity="center"
+        android:textColor="@color/colorPrimary"
+        tools:layout_editor_absoluteX="123dp"
+        tools:layout_editor_absoluteY="482dp"
+        tools:text="Light Sensor Values" />
+</LinearLayout>
