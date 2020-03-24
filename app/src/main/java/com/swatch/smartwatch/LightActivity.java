@@ -26,7 +26,6 @@ public class LightActivity extends AppCompatActivity {
     private static final String TAG ="BLE" ;
     private TextView mTextView;
     private ImageView mImageView;
-    private boolean buttonLightFlag = true;
     private   BaseActivity basVar;
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
@@ -40,22 +39,8 @@ public class LightActivity extends AppCompatActivity {
         mImageView = findViewById(R.id.imageViewLight);
         mTextView.setText("Hello world");
         basVar = (BaseActivity) getApplicationContext();
-
         basVar.setNotification(LUX_CHARACTERISTIC_UUID,true);
         plotData();
-        mImageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(buttonLightFlag){
-                    //basVar.setNotification(LUX_CHARACTERISTIC_UUID,true);
-                    buttonLightFlag=false;
-                }
-                else{
-                    //basVar.setNotification(LUX_CHARACTERISTIC_UUID,false);
-                    buttonLightFlag=true;
-                }
-            }
-        });
     }
 
     public  void plotData(){
@@ -66,7 +51,7 @@ public class LightActivity extends AppCompatActivity {
                 str= str.replace(" ","");
                 int luxVal = Integer.parseInt(str,16);
                 mTextView.setText("byteArray : "+basVar.dataFromNotification +"int val: "+luxVal);
-                setImageVıewFromBle(luxVal);
+                setImageViewFromBle(luxVal);
                 mHandler.postDelayed(this,50);
             }
 
@@ -74,7 +59,7 @@ public class LightActivity extends AppCompatActivity {
         mHandler.postDelayed(mTimer1,500);
     }
 
-    private void setImageVıewFromBle(int luxVal) {
+    private void setImageViewFromBle(int luxVal) {
         if(luxVal<50){
             mImageView.setImageResource(R.drawable.light_bump_below_50);
         }else if (luxVal<500){

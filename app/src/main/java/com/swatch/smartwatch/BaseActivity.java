@@ -27,7 +27,7 @@ import java.util.List;
 
 public class BaseActivity extends Application {
 
-    //private static BaseActivity instance;
+
     private static Context context;
 
 

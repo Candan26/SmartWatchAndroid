@@ -24,7 +24,7 @@
         <activity android:name=".DataCollectActivity" />
         <activity android:name=".TemperatureActivity" />
         <activity android:name=".EkgActivity" />
-        <activity android:name=".EsrActivity" />
+        <activity android:name=".GsrActivity" />
         <activity android:name=".LightActivity" />
         <activity android:name=".HumidityActivity" />
         <activity android:name=".FirstStartActivity">

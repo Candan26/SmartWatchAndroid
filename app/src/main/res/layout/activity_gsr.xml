@@ -7,10 +7,10 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
-    tools:context=".EsrActivity">
+    tools:context=".GsrActivity">
 
     <ImageView
-        android:id="@+id/imageViewEsr"
+        android:id="@+id/imageViewGsr"
         android:layout_width="wrap_content"
         android:layout_height="87dp"
         android:foregroundGravity="center"
@@ -22,7 +22,7 @@
         />
 
     <TextView
-        android:id="@+id/textViewEsr"
+        android:id="@+id/textViewGsr"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:gravity="center"

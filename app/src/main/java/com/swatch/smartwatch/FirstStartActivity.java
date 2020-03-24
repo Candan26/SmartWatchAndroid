@@ -73,8 +73,6 @@ public class FirstStartActivity extends AppCompatActivity {
         mTextView.setText("Starting for searching SMART WATCH device");
         mProgressBar.setVisibility(View.VISIBLE);
 
-        //BaseActivity.init();
-
         mHandler = new Handler();
         checkBluetoothLowEnergyIsSupported();
 
@@ -160,9 +158,7 @@ public class FirstStartActivity extends AppCompatActivity {
                                 }
                                 startActivity(intent);
                             }
-                            //mLeDeviceListAdapter.addDevice(device);
                             Log.d("BLE",device.getAddress() +" "+ device.getName());
-                            //mLeDeviceListAdapter.notifyDataSetChanged();
                         }
                     });
                 }
@@ -231,22 +227,5 @@ public class FirstStartActivity extends AppCompatActivity {
         public View getView(int position, View convertView, ViewGroup parent) {
             return null;
         }
-
-
-        public void addDevice(BluetoothDevice device) {
-            if (!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
-            }
-        }
-
-        public BluetoothDevice getDevice(int position) {
-            return mLeDevices.get(position);
-        }
-
-        public void clear() {
-            mLeDevices.clear();
-        }
-
     }
-
 }
