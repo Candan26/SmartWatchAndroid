@@ -36,7 +36,7 @@ public class TemperatureActivity extends AppCompatActivity {
                 str= str.replace(" ","");
                 Long tempVal = Long.parseLong(str,16);
                 Float f = Float.intBitsToFloat(tempVal.intValue());
-                mTextView.setText("byteArray : "+basVar.dataFromNotification +"int val: "+f);
+                mTextView.setText("byteArray : "+basVar.dataFromNotification +"float val: "+f);
                 setImageViewFromBle(f);
                 mHandler.postDelayed(this,50);
             }
