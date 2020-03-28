@@ -38,26 +38,31 @@ public class FirstStartActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
     private static final long CANCEL_SCAN_PERIOD = 100;
+    private static final String TAG = "BLE";
 
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
+    private  BaseActivity baseVal;
 
     @Override
     protected void onResume() {
         super.onResume();
         // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
         // fire an intent to display a dialog asking the user to grant permission to enable it.
+        Log.d(TAG,"On resume started");
+        if(mBluetoothAdapter==null){
+            Log.d(TAG,"Ble Adater is Null");
+        }
         if (!mBluetoothAdapter.isEnabled()) {
-            if (!mBluetoothAdapter.isEnabled()) {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
         }
         // Initializes list view adapter.
-        mLeDeviceListAdapter = new LeDeviceListAdapter();
-        //setListAdapter(mLeDeviceListAdapter);
-        scanLeDevice(true);
+        if(mLeDeviceListAdapter!=null)
+            mLeDeviceListAdapter = new LeDeviceListAdapter();
+        Log.d(TAG,"On resume started scan ble");
+        //scanLeDevice(true);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -68,45 +73,53 @@ public class FirstStartActivity extends AppCompatActivity {
         mProgressBar =findViewById(R.id.progressBarStart);
         mTextView = findViewById(R.id.textViewSearch);
         mImageButton = findViewById(R.id.imageButtonSearch);
-
-        mImageButton.setVisibility(View.GONE);
         mTextView.setText("Starting for searching SMART WATCH device");
-        mProgressBar.setVisibility(View.VISIBLE);
-
         mHandler = new Handler();
         checkBluetoothLowEnergyIsSupported();
-
-        final BluetoothManager bluetoothManager =
-                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         checkBluetoothISSupported();
         checkAccessCoarseLocation();
-        scanLeDevice(true);
+        startBleSearchProcess();
+        baseVal = (BaseActivity)getApplicationContext();
         //
         mImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mTextView.setText("Starting for searching SMART WATCH device");
-                mProgressBar.setVisibility(View.VISIBLE);
-                mImageButton.setVisibility(View.GONE);
-                scanLeDevice(true);
+                startBleSearchProcess();
             }
         });
 
+
+    }
+
+    public  void startBleSearchProcess(){
+        enableSearch();
+        scanLeDevice(true);
+        setTimerForBleScanTimeout();
+    }
+
+    private  void setTimerForBleScanTimeout(){
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                mProgressBar.setVisibility(View.GONE);
-                mImageButton.setVisibility(View.VISIBLE);
+                disableSearch();
                 mTextView.setText("Device could not found please  open device and search again with button");
                 if (mScanning) {
-                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                    mScanning = false;
+                    scanLeDevice(false);
                 }
             }
-        },6000);
+        },SCAN_PERIOD+100);
     }
 
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        //startBleSearchProcess();
+        finish();
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void scanLeDevice(final boolean enable) {
@@ -118,7 +131,9 @@ public class FirstStartActivity extends AppCompatActivity {
                 public void run() {
                     mScanning = false;
                     mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    Log.d(TAG,"cannot found device stopping search ");
                     invalidateOptionsMenu();
+                    disableSearch();
                 }
             }, SCAN_PERIOD);
 
@@ -133,32 +148,27 @@ public class FirstStartActivity extends AppCompatActivity {
     // Device scan callback.
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
-
                 @Override
                 public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             String bleName= getString(R.string.ble_name);
-                            //Log.d("BLE", bleName);
                             if(device.getName()!=null && device.getName().equals(bleName)){
                                 Log.d("BLE",device.getAddress() +" "+ device.getName());
                                 Log.d("BLE","Device has found");
                                 final Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                intent.putExtra(MainActivity.EXTRAS_DEVICE_NAME, device.getName());
-                                intent.putExtra(MainActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
-                                BaseActivity baseVal = (BaseActivity)getApplicationContext();
                                 baseVal.deviceName=device.getName();
                                 baseVal.deviceAddress=device.getAddress();
-                                //BaseActivity.getInstance().deviceAddress=device.getAddress();
-                                //BaseActivity.getInstance().deviceName=device.getName();
                                 if (mScanning) {
                                     mBluetoothAdapter.stopLeScan(mLeScanCallback);
                                     mScanning = false;
                                 }
+                                Log.d(TAG,"ged device founded device name "+ baseVal.deviceName);
                                 startActivity(intent);
+                                Log.d(TAG,"started new activty");
                             }
-                            Log.d("BLE",device.getAddress() +" "+ device.getName());
+                            Log.d(TAG,device.getAddress() +" "+ device.getName());
                         }
                     });
                 }
@@ -182,6 +192,16 @@ public class FirstStartActivity extends AppCompatActivity {
         }
     }
 
+    private void enableSearch(){
+        mImageButton.setVisibility(View.GONE);
+        mProgressBar.setVisibility(View.VISIBLE);
+
+    }
+
+    private void  disableSearch(){
+        mImageButton.setVisibility(View.VISIBLE);
+        mProgressBar.setVisibility(View.GONE);
+    }
 
     private void checkBluetoothISSupported() {
         // Checks if Bluetooth is supported on the device.

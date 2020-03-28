@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
@@ -58,11 +59,20 @@ public class MainActivity extends AppCompatActivity {
         mButtonGSR = findViewById(R.id.imageButtonESR);
         mButtonLight = findViewById(R.id.imageButtonLight);
         basVar = (BaseActivity) getApplicationContext();
+        Log.d(TAG,"Connecting ble ");
         basVar.connectBle();
-
         setButtonsVisibleSituation(View.INVISIBLE);
-        while(basVar.isButtonsActiveFlag); // wait until ble connect
-        setButtonsVisibleSituation(View.VISIBLE);
+
+        //while(basVar.isButtonsActiveFlag); // wait until ble connect
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+            setButtonsVisibleSituation(View.VISIBLE);
+            Log.d(TAG,"On back pressed");
+            }
+        },2000);
+
+
         mButtonDrop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -115,6 +125,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
+
     void setButtonsVisibleSituation(int status){
         mButtonDrop.setVisibility(status);
         mButtonDataCollect.setVisibility(status);
@@ -124,4 +136,11 @@ public class MainActivity extends AppCompatActivity {
         mButtonLight.setVisibility(status);
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        basVar.disconnectBle();
+        Log.d(TAG,"On back pressed");
+        finish();
+    }
 }

@@ -49,7 +49,8 @@ public class GsrActivity extends AppCompatActivity {
                 String str = basVar.dataFromNotification;
                 str= str.replace(" ","");
                 Long tempVal = Long.parseLong(str,16);
-                Float f = Float.intBitsToFloat(tempVal.intValue());
+                //Human Resistance = ((1024+2*Serial_Port_Reading)*10000)/(512-Serial_Port_Reading), unit is ohm
+                Float f =(float)(((1024+2*tempVal)*10000)/(512-tempVal));
                 mTextView.setText("byteArray : "+basVar.dataFromNotification +"float val: "+f);
                 plotGraphic(f);
                 mHandler.postDelayed(this,25);
