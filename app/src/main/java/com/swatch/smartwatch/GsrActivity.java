@@ -1,10 +1,13 @@
 package com.swatch.smartwatch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
 
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -13,10 +16,12 @@ import com.jjoe64.graphview.GridLabelRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.util.Map;
+
 public class GsrActivity extends AppCompatActivity {
 
-    private static final int MAX_VALUE =1024 ;
-    private static final int MAX_VALUE_OF_X_AXIS =1024 ;
+    private static int MAX_VALUE =1024 ;
+    private static int MAX_VALUE_OF_X_AXIS =1024 ;
 
 
     private final String GSR_CHARACTERISTIC_UUID = "60538aee-dd71-11e9-98a9-2a2ae2dbcce4";
@@ -39,6 +44,13 @@ public class GsrActivity extends AppCompatActivity {
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(GSR_CHARACTERISTIC_UUID,true);
         gsrGraph = findViewById(R.id.gsrGraphViewId);
+
+        SharedPreferences preferences =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        Map<String, String> keyValues= (Map<String, String>) preferences.getAll();
+        MAX_VALUE=Integer.parseInt(keyValues.get("egrSampleRate"));
+        MAX_VALUE_OF_X_AXIS=Integer.parseInt(keyValues.get("egrSampleRateXAxis"));
+
+
         adjustGraphicsProperties(gsrGraph);
         plotData();
     }

@@ -1,8 +1,12 @@
 package com.swatch.smartwatch;
 
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -12,12 +16,14 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -70,6 +76,12 @@ public class FirstStartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_first_start);
+
+        ActionBar actionBar = getSupportActionBar();
+       if (actionBar != null) {
+           actionBar.setDisplayHomeAsUpEnabled(true);;
+           actionBar.setHomeAsUpIndicator(R.mipmap.ic_launcher);
+        }
         mProgressBar =findViewById(R.id.progressBarStart);
         mTextView = findViewById(R.id.textViewSearch);
         mImageButton = findViewById(R.id.imageButtonSearch);
@@ -90,8 +102,17 @@ public class FirstStartActivity extends AppCompatActivity {
                 startBleSearchProcess();
             }
         });
+    }
 
-
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            Log.d(TAG,"home buton presed");
+            final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+            startActivity(intent);
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     public  void startBleSearchProcess(){
@@ -112,7 +133,6 @@ public class FirstStartActivity extends AppCompatActivity {
             }
         },SCAN_PERIOD+100);
     }
-
 
     @Override
     public void onBackPressed() {

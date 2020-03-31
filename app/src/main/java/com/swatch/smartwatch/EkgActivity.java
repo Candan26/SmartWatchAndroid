@@ -1,7 +1,9 @@
 package com.swatch.smartwatch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
 
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,11 +14,13 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.util.Map;
+
 public class EkgActivity extends AppCompatActivity {
 
     private final String EKG_CHARACTERISTIC_UUID = "84538aee-dd71-11e9-a4b4-2a2ae2dbcce4";
-    private static final int MAX_VALUE =1024 ;
-    private static final int MAX_VALUE_OF_X_AXIS =1024 ;
+    private static  int MAX_VALUE =1024 ;
+    private static  int MAX_VALUE_OF_X_AXIS =1024 ;
     private TextView mTextView;
     private ImageView mImageView;
     private BaseActivity basVar;
@@ -38,6 +42,13 @@ public class EkgActivity extends AppCompatActivity {
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(EKG_CHARACTERISTIC_UUID,true);
         ekgGraph = findViewById(R.id.ekgGraphViewId);
+
+        SharedPreferences preferences =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        Map<String, String> keyValues= (Map<String, String>) preferences.getAll();
+        MAX_VALUE=Integer.parseInt(keyValues.get("ekgSampleRate"));
+        MAX_VALUE_OF_X_AXIS=Integer.parseInt(keyValues.get("ekgSampleRateXAxis"));
+
+
         adjustGraphicsProperties(ekgGraph);
         plotData();
 
