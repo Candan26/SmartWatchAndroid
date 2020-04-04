@@ -6,12 +6,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.ScaleAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+
+import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,8 @@ public class HumidityActivity extends AppCompatActivity {
     private   BaseActivity basVar;
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
+    private SmartWatchServer sw;
+    List<SmartWatchServer.SensorInfo> sensorInfoListForHumidity;
 
     int i=0;
     @Override
@@ -37,6 +42,18 @@ public class HumidityActivity extends AppCompatActivity {
         mTextView.setText("Hello world");
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(HUMIDITY_CHARACTERISTIC_UUID,true);
+
+        sw = new SmartWatchServer(this);
+        sw.getSensorInfoList(SmartWatchServer.HUMIDITY);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sensorInfoListForHumidity =sw.sensorInfoList;
+                Log.d(TAG,"Checking data on Humidity");
+            }
+        },2000);
+
         plotData();
     }
 

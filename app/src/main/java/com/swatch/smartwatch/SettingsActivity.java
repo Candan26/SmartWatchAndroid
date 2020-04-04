@@ -39,6 +39,7 @@ public class SettingsActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == android.R.id.home) {
+            //TODO ADD UPDATE ON USER INFORMATION
             finish();
         }
         return super.onOptionsItemSelected(item);

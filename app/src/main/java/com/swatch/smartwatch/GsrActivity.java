@@ -15,7 +15,9 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.swatch.smartwatch.ws.SmartWatchServer;
 
+import java.util.List;
 import java.util.Map;
 
 public class GsrActivity extends AppCompatActivity {
@@ -33,6 +35,9 @@ public class GsrActivity extends AppCompatActivity {
     private final Handler mHandler = new Handler();
     int gsrGraphicCounter=0;
     private LineGraphSeries<DataPoint> mSeries;
+    private SmartWatchServer sw;
+    List<SmartWatchServer.SensorInfo> sensorInfoListForSKIN;
+    private static final String TAG = "GSR";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +55,16 @@ public class GsrActivity extends AppCompatActivity {
         MAX_VALUE=Integer.parseInt(keyValues.get("egrSampleRate"));
         MAX_VALUE_OF_X_AXIS=Integer.parseInt(keyValues.get("egrSampleRateXAxis"));
 
+        sw = new SmartWatchServer(this);
+        sw.getSensorInfoList(SmartWatchServer.SKIN);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sensorInfoListForSKIN =sw.sensorInfoList;
+                Log.d(TAG,"Checking data on GSR");
+            }
+        },2000);
 
         adjustGraphicsProperties(gsrGraph);
         plotData();

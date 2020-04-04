@@ -7,13 +7,16 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.swatch.smartwatch.ws.SmartWatchServer;
 
+import java.util.List;
 import java.util.Map;
 
 public class EkgActivity extends AppCompatActivity {
@@ -29,9 +32,13 @@ public class EkgActivity extends AppCompatActivity {
     GraphView ekgGraph;
     int ekgGraphicCounter=0;
     private LineGraphSeries<DataPoint> mSeries;
-
     private int MAX_VALUE_EKG = 0xFFFF;
     private int MAX_VALUE_ADC= 4000;
+    private SmartWatchServer sw;
+    List<SmartWatchServer.SensorInfo> sensorInfoListForHeartRate;
+
+
+    private static final String TAG = "EKG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +55,19 @@ public class EkgActivity extends AppCompatActivity {
         MAX_VALUE=Integer.parseInt(keyValues.get("ekgSampleRate"));
         MAX_VALUE_OF_X_AXIS=Integer.parseInt(keyValues.get("ekgSampleRateXAxis"));
 
+        sw = new SmartWatchServer(this);
+        sw.getSensorInfoList(SmartWatchServer.HR);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sensorInfoListForHeartRate =sw.sensorInfoList;
+                Log.d(TAG,"Checking data on LUX");
+            }
+        },2000);
 
         adjustGraphicsProperties(ekgGraph);
         plotData();
-
     }
     public  void plotData(){
         mTimer1 = new Runnable() {

@@ -36,6 +36,30 @@
             app:title="ESR MAX VALUE OF X AXIS"
             app:useSimpleSummaryProvider="true"/>
 
+        <EditTextPreference
+            app:key="usrName"
+            app:title="User Name"
+            app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            app:key="usrSurname"
+            app:title="User Surname"
+            app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            app:key="usrAge"
+            app:title="User Age"
+            app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            app:key="usrWeight"
+            app:title="User Weight"
+            app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            app:key="usrHeight"
+            app:title="User Hieght"
+            app:useSimpleSummaryProvider="true"/>
 
     </PreferenceCategory>
 </PreferenceScreen>

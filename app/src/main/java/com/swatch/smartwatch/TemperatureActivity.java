@@ -4,8 +4,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.swatch.smartwatch.ws.SmartWatchServer;
+
+import java.util.List;
 
 public class TemperatureActivity extends AppCompatActivity {
 
@@ -15,6 +20,9 @@ public class TemperatureActivity extends AppCompatActivity {
     private BaseActivity basVar;
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
+    private SmartWatchServer sw;
+    List<SmartWatchServer.SensorInfo> sensorInfoListForTEMPERATURE;
+    private static final String TAG = "TEMP";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +32,17 @@ public class TemperatureActivity extends AppCompatActivity {
         mImageView = findViewById(R.id.imageViewTemperature);
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(TEMPERATURE_CHARACTERISTIC_UUID,true);
+
+        sw = new SmartWatchServer(this);
+        sw.getSensorInfoList(SmartWatchServer.TEMPERATURE);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sensorInfoListForTEMPERATURE =sw.sensorInfoList;
+                Log.d(TAG,"Checking data on Temperature");
+            }
+        },2000);
         plotData();
 
     }
