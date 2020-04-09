@@ -132,9 +132,9 @@ public class BaseActivity extends Application {
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 //displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
-                Log.d(TAG,intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                Log.v(TAG,intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 dataFromNotification =intent.getStringExtra(BluetoothLeService.EXTRA_CHAR_DATA);
-                Log.d(TAG,"Incoming from intent data" +dataFromNotification);
+                //Log.d(TAG,"Incoming from intent data" +dataFromNotification);
             }
         }
     };

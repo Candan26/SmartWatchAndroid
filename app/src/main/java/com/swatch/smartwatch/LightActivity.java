@@ -3,42 +3,14 @@ package com.swatch.smartwatch;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.preference.PreferenceManager;
-
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.swatch.smartwatch.ws.SmartWatchServer;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 public class LightActivity extends AppCompatActivity {
@@ -68,9 +40,15 @@ public class LightActivity extends AppCompatActivity {
         sw.getSensorInfoList(SmartWatchServer.LUX);
 
         new Handler().postDelayed(new Runnable() {
+
+
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
                 sensorInfoListForLUX =sw.sensorInfoList;
+                for (SmartWatchServer.SensorInfo sensorInfo :sw.sensorInfoList ){
+                    Log.d(TAG,"Data From Lux"+ sensorInfo.getData());
+                }
                 Log.d(TAG,"Checking data on LUX");
             }
         },2000);
@@ -122,52 +100,6 @@ public class LightActivity extends AppCompatActivity {
         basVar.setNotification(LUX_CHARACTERISTIC_UUID,false);
     }
 
-/*
-    public  void getWebServiceResponseData() {
-        StringBuffer response = null;
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String subPageUrl="/api/environment";
-        SharedPreferences preferences =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        Map<String, String> keyValues= (Map<String, String>) preferences.getAll();
-        String ip=keyValues.get("serverIpAddress");
-        String port=keyValues.get("serverPortNumber");
-        String url ="http://"+ip+":"+port+subPageUrl;
-        Log.d(TAG,"url name "+ url);
-        try {
-
-            StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                    new Response.Listener<String>() {
-                        @Override
-                        public void onResponse(String response) {
-                            // Display the first 500 characters of the response string.
-                            Log.d(TAG,"Response is: "+ response);
-                            try {
-                                JSONArray jsonArray = new JSONArray(response);
-                                for (int i = 0; i < jsonArray.length(); i++) {
-                                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                                    Log.d(TAG,"From JSON OBJECT "+i+" "+jsonObject.get("id"));
-                                }
-
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.d(TAG,"That didn't work!");
-                }
-            });
-
-
-            queue.add(stringRequest);
-        }catch (Exception e){
-            Toast.makeText(getApplicationContext(),"Please check ip and port", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-        }
-    }
-
- */
 }
 
 

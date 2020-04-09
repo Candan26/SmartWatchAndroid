@@ -19,7 +19,6 @@
             app:title="EKG SAMPLE RATE INT"
             app:useSimpleSummaryProvider="true"/>
 
-
         <EditTextPreference
             app:key="ekgSampleRateXAxis"
             app:title="EKG MAX VALUE OF X AXIS"
@@ -29,7 +28,6 @@
             app:key="egrSampleRate"
             app:title="ESR SAMPLE RATE INT"
             app:useSimpleSummaryProvider="true"/>
-
 
         <EditTextPreference
             app:key="egrSampleRateXAxis"
@@ -44,6 +42,11 @@
         <EditTextPreference
             app:key="usrSurname"
             app:title="User Surname"
+            app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            app:key="usrMailAddress"
+            app:title="User Mail Address"
             app:useSimpleSummaryProvider="true"/>
 
         <EditTextPreference

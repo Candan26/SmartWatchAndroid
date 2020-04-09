@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragment.EmailFragment">
+
+    <!-- TODO: Update blank fragment layout -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="694dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textViewEmailHostName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="please enter email address" />
+
+                <EditText
+                    android:id="@+id/editTextEmailHostName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="test@gmail.com" />
+
+                <TextView
+                    android:id="@+id/textViewSkinPageNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="please enter Skin Page Number" />
+
+                <EditText
+                    android:id="@+id/editTextSkinPageNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1" />
+
+                <TextView
+                    android:id="@+id/textViewSkinRowPerPage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="please enter skin element(row) per page " />
+
+                <EditText
+                    android:id="@+id/editTextSkinRowPerPage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="100" />
+
+                <TextView
+                    android:id="@+id/textViewHeartPageNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="please enter heart Page Number" />
+
+                <EditText
+                    android:id="@+id/editTextHeartPageNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1" />
+
+                <TextView
+                    android:id="@+id/textViewHeartRowPerPage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="please enter heart element(row) per page " />
+
+                <EditText
+                    android:id="@+id/editTextHeartRowPerPage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="100" />
+
+                <TextView
+                    android:id="@+id/textViewEnvPageNumber"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="Please Enter Environment Page Number" />
+
+                <EditText
+                    android:id="@+id/editTextEnvPageNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1" />
+
+                <TextView
+                    android:id="@+id/textViewEnvRowPerPage"
+                    android:layout_width="match_parent"
+                    android:layout_height="47dp"
+                    android:layout_marginBottom="15dp"
+                    android:text="please enter environment element(row) per page " />
+
+                <EditText
+                    android:id="@+id/editTextEnvRowPerPage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="100" />
+
+                <Button
+                    android:id="@+id/buttonSendInformation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="15dp"
+                    android:text="Send email from data base" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</FrameLayout>

@@ -1,19 +1,27 @@
 package com.swatch.smartwatch;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.swatch.smartwatch.fragment.EmailFragment;
+import com.swatch.smartwatch.ws.SmartWatchServer;
+
 import java.nio.ByteBuffer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class DataCollectActivity extends AppCompatActivity {
 
-    private static final int MAX_BYTE_LENGTH = 256;
+    private static final int MAX_BYTE_LENGTH = 128;//256
+    private static final String TAG = "DATA COLLECT";
     private final String DATA_COLLECT_CHARACTERISTIC_UUID = "54538aee-dd71-11e9-98a9-2a2ae2dbcce4";
     private TextView mTextView;
     private ImageView mImageView;
@@ -28,19 +36,21 @@ public class DataCollectActivity extends AppCompatActivity {
     public static final  int SKIN =4;
 
     int gsr;
-    byte [] dataArrayGSR = new byte[1024];
+    String dataToSendDBGSR = "";
 
     int ekg;
-    byte []dataArrayEKG = new byte[1024];
+    String dataToSendDBEKG = "";
 
     int lux;
-    byte []dataArrayLUX = new byte[1024];
+    String dataToSendDBLUX = "";
 
     private float humidity;
-    byte []dataArrayHumidity = new byte[1024];
+    String dataToSendDBHumidity = "";
 
     private float temperature;
-    byte []dataArrayTemperature = new byte[1024];
+    String dataToSendDBTemperature = "";
+
+    private SmartWatchServer sw;
 
     int dbCounter=0;
 
@@ -52,38 +62,26 @@ public class DataCollectActivity extends AppCompatActivity {
 
         mTextView = findViewById(R.id.textViewDataCollect);
         mImageView = findViewById(R.id.imageViewDataCollect);
+
+
+        final int[] counter = {0};
+
+        mImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                counter[0]++;
+                final EmailFragment blankFragment = new EmailFragment();
+                final FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
+                fragmentTransaction.add(R.id.DataCollectLayoutId,blankFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID,true);
+        sw = new SmartWatchServer(this);
         plotData();
-    }
-
-    public static String ASCIItoHEX(String ascii)
-    {
-        // Initialize final String
-        String hex = "";
-
-        // Make a loop to iterate through
-        // every character of ascii string
-        for (int i = 0; i < ascii.length(); i++) {
-
-            // take a char from
-            // position i of string
-            char ch = ascii.charAt(i);
-
-            // cast char to integer and
-            // find its ascii value
-            int in = (int)ch;
-
-            // change this ascii value
-            // integer to hexadecimal value
-            String part = Integer.toHexString(in);
-
-            // add this hexadecimal value
-            // to final string.
-            hex += part;
-        }
-        // return the final string hex
-        return hex;
     }
 
     private void getCharArrayOfData(Byte array[],String hex){
@@ -93,8 +91,6 @@ public class DataCollectActivity extends AppCompatActivity {
             String s = hex.substring(i, i + 2);
             // Step-2 Convert the each character group into integer using valueOf method
             int ik = Integer.valueOf(s,16);
-
-            //byte b=  Byte.valueOf(s,16);
             // Step-3 Cast the integer value to char
             array[j]=(byte)ik;
             j++;
@@ -102,6 +98,7 @@ public class DataCollectActivity extends AppCompatActivity {
     }
     public  void plotData(){
         mTimer1 = new Runnable() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
                 String str = basVar.dataFromNotification;
@@ -111,81 +108,142 @@ public class DataCollectActivity extends AppCompatActivity {
                 byte b=  Byte.valueOf(s,16);
                 Byte []array =new Byte[20];
                 getCharArrayOfData(array,str);
-
-                byte []tempArray = new byte[4];
-
-                for(int i= 0 ;i<5 ;i++){
-                    for(int j = 0; j<4; j++){
-                        tempArray[j]=array[(i*4)+j];
-                    }
-                    if(i==0){
-                        ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                        humidity = wrapped.getFloat();
-                        dataAppendProcess(HUMIDITY,tempArray);
-                    }
-
-                    if(i==1){
-                        ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                        temperature = wrapped.getFloat();
-                        dataAppendProcess(TEMPERATURE,tempArray);
-                    }
-
-                    if(i==2){
-                        ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                        ekg = wrapped.getInt();
-                        dataAppendProcess(HR,tempArray);
-                    }
-
-                    if(i==3){
-                        ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                        lux = wrapped.getInt();
-                        dataAppendProcess(LUX,tempArray);
-                    }
-
-                    if(i==4){
-                        ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                        gsr = wrapped.getInt();
-                        dataAppendProcess(SKIN,tempArray);
-                    }
-
-                }
-
-
-                dbCounter++;
+                fillDataBaseData(array);
                 mTextView.setText("byteArray : "+basVar.dataFromNotification +" humidity: "+humidity +
                                   " temperature: "+ temperature + " heart rate: "+ ekg +" LUX: "+lux + " SKIN: "+gsr);
-                mHandler.postDelayed(this,25);
-                if(dbCounter==MAX_BYTE_LENGTH){
-                    //send data process  to server
-                    mTextView.setText("counter finished");
-                    dbCounter=0;
+                try {
+                    dataBaseSendWSProcess();
+                }catch (Exception ex){
+                    Log.d(TAG,ex.toString());
                 }
+                dbCounter++;
+                mHandler.postDelayed(this,125);
 
             }
-
         };
         mHandler.postDelayed(mTimer1,500);
     }
 
+    private void fillDataBaseData(Byte []array){
+        byte []tempArray = new byte[4];
+
+        for(int i= 0 ;i<5 ;i++){
+            for(int j = 0; j<4; j++){
+                tempArray[j]=array[(i*4)+j];
+            }
+            if(i==0){
+                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                humidity = wrapped.getFloat();
+                dataAppendProcess(HUMIDITY,tempArray);
+            }
+
+            if(i==1){
+                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                temperature = wrapped.getFloat();
+                dataAppendProcess(TEMPERATURE,tempArray);
+            }
+
+            if(i==2){
+                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                ekg = wrapped.getInt();
+                dataAppendProcess(HR,tempArray);
+            }
+
+            if(i==3){
+                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                lux = wrapped.getInt();
+                dataAppendProcess(LUX,tempArray);
+            }
+
+            if(i==4){
+                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                gsr = wrapped.getInt();
+                dataAppendProcess(SKIN,tempArray);
+            }
+
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private  void dataBaseSendWSProcess(){
+        if(dbCounter==MAX_BYTE_LENGTH){
+            //send data process  to server
+            mTextView.setText("counter finished");
+            dbCounter=0;
+
+            new Handler().postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    sw.setSensorInfo(SmartWatchServer.LUX,dataToSendDBLUX);
+                    dataToSendDBLUX ="";
+                }
+            },1);
+
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    sw.setSensorInfo(SmartWatchServer.HUMIDITY,dataToSendDBHumidity);
+                    dataToSendDBHumidity ="";
+                }
+            },25);
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    sw.setSensorInfo(SmartWatchServer.TEMPERATURE,dataToSendDBTemperature);
+                    dataToSendDBTemperature ="";
+                }
+            },50);
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    sw.setSensorInfo(SmartWatchServer.HR,dataToSendDBEKG);
+                    dataToSendDBEKG ="";
+                }
+            },75);
+
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    sw.setSensorInfo(SmartWatchServer.SKIN,dataToSendDBGSR);
+                    dataToSendDBGSR ="";
+                }
+            },100);
+        }
+    }
 
     private void dataAppendProcess(int data_type, byte[] array){
-        for(int i=0; i<4; i++){
+
             if(data_type==LUX){
-                dataArrayLUX[(4*dbCounter)+i]=array[i];
+                dataToSendDBLUX = dataToSendDBLUX +bytesToHex (array);
             }else if(data_type==HUMIDITY){
-                dataArrayHumidity[(4*dbCounter)+i]=array[i];
+                dataToSendDBHumidity = dataToSendDBHumidity +bytesToHex (array);
             }
             else if(data_type==TEMPERATURE){
-                dataArrayTemperature[(4*dbCounter)+i]=array[i];
+                dataToSendDBTemperature = dataToSendDBTemperature + bytesToHex (array);
             }
             else if(data_type==HR){
-                dataArrayEKG[(4*dbCounter)+i]=array[i];
+                dataToSendDBEKG = dataToSendDBEKG + bytesToHex (array);
             }
             else if(data_type==SKIN){
-                dataArrayGSR[(4*dbCounter)+i]=array[i];
+                dataToSendDBGSR = dataToSendDBGSR + bytesToHex (array);
             }
-        }
+    }
 
+
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
     @Override
