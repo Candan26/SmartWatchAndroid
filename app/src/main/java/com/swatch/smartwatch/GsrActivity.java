@@ -1,6 +1,8 @@
 package com.swatch.smartwatch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.PreferenceManager;
 
 import android.content.SharedPreferences;
@@ -8,6 +10,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -15,6 +18,7 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.swatch.smartwatch.fragment.SqlTableListFragment;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.util.List;
@@ -63,12 +67,14 @@ public class GsrActivity extends AppCompatActivity {
             public void run() {
                 sensorInfoListForSKIN =sw.sensorInfoList;
                 Log.d(TAG,"Checking data on GSR");
+                setFragment();
             }
         },2000);
 
         adjustGraphicsProperties(gsrGraph);
         plotData();
     }
+
     public  void plotData(){
         mTimer1 = new Runnable() {
             @Override
@@ -113,10 +119,35 @@ public class GsrActivity extends AppCompatActivity {
 
     }
 
+    public void setFragment(){
+        mImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mImageView.setVisibility(View.GONE);
+                gsrGraph.setVisibility(View.GONE);
+                mTextView.setVisibility(View.GONE);
+                final SqlTableListFragment sqlTableListFragment = new SqlTableListFragment(sensorInfoListForSKIN,R.layout.activity_gsr);
+                final FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
+                fragmentTransaction.add(R.id.GsrLayoutId,sqlTableListFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
         mHandler.removeCallbacks(mTimer1);
         basVar.setNotification(GSR_CHARACTERISTIC_UUID,false);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        mImageView.setVisibility(View.VISIBLE);
+        gsrGraph.setVisibility(View.VISIBLE);
+        mTextView.setVisibility(View.VISIBLE);
     }
 }

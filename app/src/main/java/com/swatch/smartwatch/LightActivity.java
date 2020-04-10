@@ -3,12 +3,18 @@ package com.swatch.smartwatch;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.swatch.smartwatch.fragment.SqlTableListFragment;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 import java.util.List;
 
@@ -50,6 +56,7 @@ public class LightActivity extends AppCompatActivity {
                     Log.d(TAG,"Data From Lux"+ sensorInfo.getData());
                 }
                 Log.d(TAG,"Checking data on LUX");
+                setFragment();
             }
         },2000);
 
@@ -93,6 +100,23 @@ public class LightActivity extends AppCompatActivity {
             mImageView.setImageResource(R.drawable.light_bump_between_3500_4000);
         }
     }
+
+    public void setFragment(){
+        mImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mImageView.setVisibility(View.GONE);
+                mTextView.setVisibility(View.GONE);
+                final SqlTableListFragment sqlTableListFragment = new SqlTableListFragment(sensorInfoListForLUX,R.layout.activity_light);
+                final FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
+                fragmentTransaction.add(R.id.LightLayoutId,sqlTableListFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -100,6 +124,12 @@ public class LightActivity extends AppCompatActivity {
         basVar.setNotification(LUX_CHARACTERISTIC_UUID,false);
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        mImageView.setVisibility(View.VISIBLE);
+        mTextView.setVisibility(View.VISIBLE);
+    }
 }
 
 

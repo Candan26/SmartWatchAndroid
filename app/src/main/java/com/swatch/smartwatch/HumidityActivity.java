@@ -2,6 +2,8 @@ package com.swatch.smartwatch;
 
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 
+import com.swatch.smartwatch.fragment.SqlTableListFragment;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.util.ArrayList;
@@ -51,6 +54,7 @@ public class HumidityActivity extends AppCompatActivity {
             public void run() {
                 sensorInfoListForHumidity =sw.sensorInfoList;
                 Log.d(TAG,"Checking data on Humidity");
+                setFragment();
             }
         },2000);
 
@@ -96,10 +100,34 @@ public class HumidityActivity extends AppCompatActivity {
             mImageView.setImageResource(R.drawable.drop_image_100_percent);
         }
     }
+
+    public void setFragment(){
+        mImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mImageView.setVisibility(View.GONE);
+                mTextView.setVisibility(View.GONE);
+                final SqlTableListFragment sqlTableListFragment = new SqlTableListFragment(sensorInfoListForHumidity,R.layout.activity_humidity);
+                final FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
+                fragmentTransaction.add(R.id.HumidityLayoutId,sqlTableListFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
         mHandler.removeCallbacks(mTimer1);
         basVar.setNotification(HUMIDITY_CHARACTERISTIC_UUID,false);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        mImageView.setVisibility(View.VISIBLE);
+        mTextView.setVisibility(View.VISIBLE);
     }
 }

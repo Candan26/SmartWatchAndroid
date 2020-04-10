@@ -7,16 +7,17 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
+    android:id="@+id/EkgLayoutId"
     tools:context=".EkgActivity">
 
     <ImageView
         android:id="@+id/imageViewEkg"
         android:layout_width="match_parent"
         android:layout_height="153dp"
+        android:layout_marginBottom="15dp"
         android:foregroundGravity="center"
         android:scaleType="fitXY"
         android:src="@drawable/image_ekg"
-        android:layout_marginBottom="15dp"
         tools:layout_editor_absoluteX="159dp"
         tools:layout_editor_absoluteY="258dp" />
 

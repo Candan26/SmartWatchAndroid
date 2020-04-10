@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragment.SqlTableListFragment">
+
     <TextView
         android:id="@+id/textViewTitle"
         android:layout_width="wrap_content"
@@ -12,11 +13,9 @@
         android:layout_marginTop="16dp"
         android:text="TableView using RecyclerView"
         android:textSize="18sp"
-        android:layout_constraintLeft_toLeftOf="parent"
-        android:layout_constraintRight_toRightOf="parent"
-        android:layout_constraintTop_toTopOf="parent" />
+        android:layout_marginLeft="15dp"
+     />
 
-    <!-- Table View-->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -24,18 +23,13 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_constraintBottom_toBottomOf="parent"
-        android:layout_constraintEnd_toEndOf="parent"
-        android:layout_constraintStart_toStartOf="parent"
-        android:layout_constraintTop_toBottomOf="@+id/textViewTitle">
-
+        android:layout_marginTop="8dp">
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewDeliveryProductList"
+            android:id="@+id/recyclerViewSensorInfoList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false"
-            tools:listitem="@xml/sql_table" />
-
+            tools:listitem="@layout/sql_table" />
     </HorizontalScrollView>
-</>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

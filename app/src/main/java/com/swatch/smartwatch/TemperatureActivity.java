@@ -1,13 +1,17 @@
 package com.swatch.smartwatch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.swatch.smartwatch.fragment.SqlTableListFragment;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.util.List;
@@ -21,7 +25,7 @@ public class TemperatureActivity extends AppCompatActivity {
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
     private SmartWatchServer sw;
-    List<SmartWatchServer.SensorInfo> sensorInfoListForTEMPERATURE;
+    List<SmartWatchServer.SensorInfo> sensorInfoListForTemperature;
     private static final String TAG = "TEMP";
 
     @Override
@@ -39,8 +43,9 @@ public class TemperatureActivity extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                sensorInfoListForTEMPERATURE =sw.sensorInfoList;
+                sensorInfoListForTemperature =sw.sensorInfoList;
                 Log.d(TAG,"Checking data on Temperature");
+                setFragment();
             }
         },2000);
         plotData();
@@ -95,10 +100,34 @@ public class TemperatureActivity extends AppCompatActivity {
             mImageView.setImageResource(R.drawable.termo_40);
         }
     }
+
+    public void setFragment(){
+        mImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mImageView.setVisibility(View.GONE);
+                mTextView.setVisibility(View.GONE);
+                final SqlTableListFragment sqlTableListFragment = new SqlTableListFragment(sensorInfoListForTemperature,R.layout.activity_temperature);
+                final FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
+                fragmentTransaction.add(R.id.TemperatureLayoutId,sqlTableListFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
         mHandler.removeCallbacks(mTimer1);
         basVar.setNotification(TEMPERATURE_CHARACTERISTIC_UUID,false);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        mImageView.setVisibility(View.VISIBLE);
+        mTextView.setVisibility(View.VISIBLE);
     }
 }

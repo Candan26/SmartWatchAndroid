@@ -63,13 +63,9 @@ public class DataCollectActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.textViewDataCollect);
         mImageView = findViewById(R.id.imageViewDataCollect);
 
-
-        final int[] counter = {0};
-
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                counter[0]++;
                 final EmailFragment blankFragment = new EmailFragment();
                 final FragmentManager fm = getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fm.beginTransaction ();

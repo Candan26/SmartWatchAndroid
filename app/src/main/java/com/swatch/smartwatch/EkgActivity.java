@@ -1,6 +1,8 @@
 package com.swatch.smartwatch;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.preference.PreferenceManager;
 
 import android.content.SharedPreferences;
@@ -8,12 +10,14 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.swatch.smartwatch.fragment.SqlTableListFragment;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.util.List;
@@ -45,7 +49,7 @@ public class EkgActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ekg);
         mTextView = findViewById(R.id.textViewEkg);
-        mImageView = findViewById(R.id.imageButtonEKG);
+        mImageView = findViewById(R.id.imageViewEkg);
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(EKG_CHARACTERISTIC_UUID,true);
         ekgGraph = findViewById(R.id.ekgGraphViewId);
@@ -63,12 +67,31 @@ public class EkgActivity extends AppCompatActivity {
             public void run() {
                 sensorInfoListForHeartRate =sw.sensorInfoList;
                 Log.d(TAG,"Checking data on LUX");
+                setFragment();
             }
         },2000);
-
         adjustGraphicsProperties(ekgGraph);
         plotData();
     }
+
+    public void setFragment(){
+        mImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mImageView.setVisibility(View.GONE);
+                ekgGraph.setVisibility(View.GONE);
+                mTextView.setVisibility(View.GONE);
+                final SqlTableListFragment sqlTableListFragment = new SqlTableListFragment(sensorInfoListForHeartRate,R.layout.activity_ekg);
+                final FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
+                fragmentTransaction.add(R.id.EkgLayoutId,sqlTableListFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+
+            }
+        });
+    }
+
     public  void plotData(){
         mTimer1 = new Runnable() {
             @Override
@@ -111,6 +134,15 @@ public class EkgActivity extends AppCompatActivity {
         mSeries.setDrawBackground(true);
         mSeries.setColor(Color.RED);
         v.addSeries(mSeries);
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        mImageView.setVisibility(View.VISIBLE);
+        ekgGraph.setVisibility(View.VISIBLE);
+        mTextView.setVisibility(View.VISIBLE);
 
     }
 
