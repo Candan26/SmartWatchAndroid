@@ -43,7 +43,7 @@ public class LightActivity extends AppCompatActivity {
         basVar.setNotification(LUX_CHARACTERISTIC_UUID,true);
 
         sw = new SmartWatchServer(this);
-        sw.getSensorInfoList(SmartWatchServer.LUX);
+        //sw.getSensorInfoList(SmartWatchServer.LUX);
 
         new Handler().postDelayed(new Runnable() {
 

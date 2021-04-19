@@ -21,6 +21,10 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.swatch.smartwatch.sensors.Max3003;
+import com.swatch.smartwatch.sensors.Max30102;
+import com.swatch.smartwatch.sensors.Si7021;
+import com.swatch.smartwatch.sensors.SkinResistance;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,16 +44,13 @@ public class SmartWatchServer extends Service {
 
 
     private static final String TAG = "WS";
-    private static String EnvironmentSensorSubPageURL= "/api/environment";
-    private static String SkinSensorSubPageURL= "/api/skin";
-    private static String HeartSensorSubPageURL= "/api/heart";
     private static String UserInfoSubPageURL= "/api/userInfo";
     private static String EmailSubPageURL= "/api/email";
+    private static String SkinSensorSubPageURL= "/api/skin";
+    private static String Max3003SubPageURL= "/api/max3003";
+    private static String Max30102SubPageURL= "/api/max30102";
+    private static String Si7021SubPageURL= "/api/si7021";
 
-    public static final  String LUX= "Luminance";
-    public static final  String HUMIDITY= "humidity";
-    public static final  String TEMPERATURE= "temperature";
-    public static final  String HR= "heart";
     public static final  String SKIN= "skin";
     public static final  String EMAIL= "email";
 
@@ -60,9 +61,10 @@ public class SmartWatchServer extends Service {
     private List<UserInfo> userInfoList;
 
     private Context mContext;
-    private String personName="";
+    private String personName = "";
+    private  String personSurname = "";
 
-    String pattern = "yyyy-MM-dd";
+    String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
 
     public SmartWatchServer(Context context) {
@@ -70,10 +72,89 @@ public class SmartWatchServer extends Service {
         Map<String, String> keyValues = (Map<String, String>) preferences.getAll();
         mIp = keyValues.get("serverIpAddress");
         mPort = keyValues.get("serverPortNumber");
-        personName= keyValues.get("usrName")+keyValues.get("usrSurname")+keyValues.get("usrAge");
+        personName = keyValues.get("usrName");//+keyValues.get("usrAge");
+        personSurname = keyValues.get("usrSurname");
         mContext = context;
         sensorInfoList= new ArrayList<>();
         userInfoList= new ArrayList<>();
+    }
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void setSensorInfo(Max3003 max3003){
+        RequestQueue queue = Volley.newRequestQueue(mContext);
+        String url = "http://" + mIp + ":" + mPort + Max3003SubPageURL;
+        Log.d(TAG, "url name " + url);
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("status", max3003.getType());
+        params.put("ecg", max3003.getEcg().toString());
+        params.put("rr", max3003.getRr().toString());
+        params.put("personName", personName);
+        params.put("personSurname",personSurname);
+        params.put("date", simpleDateFormat.format(max3003.getDate()));
+        sendMessageToQueue(queue, url, params);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void setSensorInfo(Max30102 max30102){
+        RequestQueue queue = Volley.newRequestQueue(mContext);
+        String url = "http://" + mIp + ":" + mPort + Max30102SubPageURL;
+        Log.d(TAG, "url name " + url);
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("status", max30102.getType());
+        params.put("hr", max30102.getHr().toString());
+        params.put("spo2", max30102.getSpo2().toString());
+        params.put("diff", "");
+        params.put("personName", personName);
+        params.put("personSurname",personSurname);
+        params.put("date", simpleDateFormat.format(max30102.getDate()));
+        sendMessageToQueue(queue, url, params);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void setSensorInfo(Si7021 si7021){
+        RequestQueue queue = Volley.newRequestQueue(mContext);
+        String url = "http://" + mIp + ":" + mPort + Si7021SubPageURL;
+        Log.d(TAG, "url name " + url);
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("status", si7021.getType());
+        params.put("humidity", si7021.getHumidityByte().toString());
+        params.put("temperature", si7021.getTemperatureByte().toString());
+        params.put("personName", personName);
+        params.put("personSurname",personSurname);
+        params.put("date", simpleDateFormat.format(si7021.getDate()));
+        sendMessageToQueue(queue, url, params);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void setSensorInfo(SkinResistance skinResistance){
+        RequestQueue queue = Volley.newRequestQueue(mContext);
+        String url = "http://" + mIp + ":" + mPort + SkinSensorSubPageURL;
+        Log.d(TAG, "url name " + url);
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("status", skinResistance.getType());
+        params.put("srValue", skinResistance.getSkinResistance().toString());
+        params.put("personName", personName);
+        params.put("personSurname",personSurname);
+        params.put("date", simpleDateFormat.format(skinResistance.getDate()));
+        sendMessageToQueue(queue, url, params);
+    }
+    private void sendMessageToQueue(RequestQueue queue, String url, HashMap<String, String> params) {
+        JsonObjectRequest req = new JsonObjectRequest(url, new JSONObject(params),
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            Log.d(TAG, response.toString(4));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d(TAG, error.toString());
+            }
+        });
+        queue.add(req);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -110,23 +191,7 @@ public class SmartWatchServer extends Service {
             params.put("date", date);
             params.put("person", personName);
         }
-        JsonObjectRequest req = new JsonObjectRequest(url, new JSONObject(params),
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            Log.d(TAG, response.toString(4));
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d(TAG, error.toString());
-            }
-        });
-        queue.add(req);
+        sendMessageToQueue(queue, url, params);
     }
 
     public List<SensorInfo> getSensorInfoList(final String sensorType){
@@ -182,13 +247,16 @@ public class SmartWatchServer extends Service {
 
     private String getSubPageUrl(String type){
         String subUrl="";
+        /*
         if(type.equals("Luminance") || type.equals("humidity") || type.equals("temperature"))
             subUrl = EnvironmentSensorSubPageURL;
         else if(type.equals("skin"))
             subUrl = SkinSensorSubPageURL;
         else if(type.equals("heart"))
             subUrl=HeartSensorSubPageURL;
-        else if(type.equals("email"))
+
+         */
+        if(type.equals("email"))
             subUrl=EmailSubPageURL;
         else
             subUrl= UserInfoSubPageURL;

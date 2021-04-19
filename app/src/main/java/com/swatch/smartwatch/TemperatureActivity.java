@@ -38,7 +38,7 @@ public class TemperatureActivity extends AppCompatActivity {
         basVar.setNotification(TEMPERATURE_CHARACTERISTIC_UUID,true);
 
         sw = new SmartWatchServer(this);
-        sw.getSensorInfoList(SmartWatchServer.TEMPERATURE);
+        //sw.getSensorInfoList(SmartWatchServer.TEMPERATURE);
 
         new Handler().postDelayed(new Runnable() {
             @Override

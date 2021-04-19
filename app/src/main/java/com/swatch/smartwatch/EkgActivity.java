@@ -60,7 +60,7 @@ public class EkgActivity extends AppCompatActivity {
         MAX_VALUE_OF_X_AXIS=Integer.parseInt(keyValues.get("ekgSampleRateXAxis"));
 
         sw = new SmartWatchServer(this);
-        sw.getSensorInfoList(SmartWatchServer.HR);
+        //sw.getSensorInfoList(SmartWatchServer.HR);
 
         new Handler().postDelayed(new Runnable() {
             @Override

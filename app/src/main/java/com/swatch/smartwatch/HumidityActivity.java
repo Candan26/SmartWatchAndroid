@@ -47,7 +47,7 @@ public class HumidityActivity extends AppCompatActivity {
         basVar.setNotification(HUMIDITY_CHARACTERISTIC_UUID,true);
 
         sw = new SmartWatchServer(this);
-        sw.getSensorInfoList(SmartWatchServer.HUMIDITY);
+        //sw.getSensorInfoList(SmartWatchServer.HUMIDITY);
 
         new Handler().postDelayed(new Runnable() {
             @Override

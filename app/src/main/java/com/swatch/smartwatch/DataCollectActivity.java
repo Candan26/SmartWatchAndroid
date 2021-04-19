@@ -14,46 +14,48 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.swatch.smartwatch.fragment.EmailFragment;
+import com.swatch.smartwatch.sensors.Max3003;
+import com.swatch.smartwatch.sensors.Max30102;
+import com.swatch.smartwatch.sensors.Si7021;
+import com.swatch.smartwatch.sensors.SkinResistance;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Date;
 
 public class DataCollectActivity extends AppCompatActivity {
 
     private static final int MAX_BYTE_LENGTH = 128;//256
     private static final String TAG = "DATA COLLECT";
-    private final String DATA_COLLECT_CHARACTERISTIC_UUID = "54538aee-dd71-11e9-98a9-2a2ae2dbcce4";
+    private final String DATA_COLLECT_CHARACTERISTIC_UUID = "24538aee-dd71-11e9-98a9-2a2ae2dbcce4";
     private TextView mTextView;
     private ImageView mImageView;
-    private   BaseActivity basVar;
+    private BaseActivity basVar;
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
 
-    public static final  int LUX = 0;
-    public static final  int HUMIDITY = 1;
-    public static final  int TEMPERATURE = 2;
-    public static final  int HR = 3;
-    public static final  int SKIN =4;
+    public static final int HUMIDITY = 0;
+    public static final int TEMPERATURE = 1;
+    public static final int GSR = 2;
+    public static final int HR = 3;
+    public static final int SPO2 = 4;
+    public static final int ECG = 5;
+    public static final int RR = 6;
 
-    int gsr;
-    String dataToSendDBGSR = "";
+    public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, ECG, RR};
+    public static Number[] nbs = {4, 4, 2, 1, 1, 4, 4};//size of each data
+    public static Number[] nbo = {0, 4, 8, 10, 11, 12, 16};//size of each data
 
-    int ekg;
-    String dataToSendDBEKG = "";
+    Max3003 max3003;
+    Max30102 max30102;
+    Si7021 si7021;
+    SkinResistance skinResistance;
 
-    int lux;
-    String dataToSendDBLUX = "";
-
-    private float humidity;
-    String dataToSendDBHumidity = "";
-
-    private float temperature;
-    String dataToSendDBTemperature = "";
 
     private SmartWatchServer sw;
 
-    int dbCounter=0;
-
+    int dbCounter = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,100 +70,103 @@ public class DataCollectActivity extends AppCompatActivity {
             public void onClick(View v) {
                 final EmailFragment blankFragment = new EmailFragment();
                 final FragmentManager fm = getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fm.beginTransaction ();
-                fragmentTransaction.add(R.id.DataCollectLayoutId,blankFragment);
+                FragmentTransaction fragmentTransaction = fm.beginTransaction();
+                fragmentTransaction.add(R.id.DataCollectLayoutId, blankFragment);
                 fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
             }
         });
         basVar = (BaseActivity) getApplicationContext();
-        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID,true);
+        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID, true);
+        max3003  = new Max3003();
+        max30102 = new Max30102();
+        si7021 = new Si7021();
+        skinResistance = new SkinResistance();
         sw = new SmartWatchServer(this);
         plotData();
     }
 
-    private void getCharArrayOfData(Byte array[],String hex){
-        int j=0;
+    private void getCharArrayOfData(Byte array[], String hex) {
+        int j = 0;
         for (int i = 0; i < hex.length(); i = i + 2) {
             // Step-1 Split the hex string into two character group
             String s = hex.substring(i, i + 2);
             // Step-2 Convert the each character group into integer using valueOf method
-            int ik = Integer.valueOf(s,16);
+            int ik = Integer.valueOf(s, 16);
             // Step-3 Cast the integer value to char
-            array[j]=(byte)ik;
+            array[j] = (byte) ik;
             j++;
         }
     }
-    public  void plotData(){
+
+    public void plotData() {
         mTimer1 = new Runnable() {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
                 String str = basVar.dataFromNotification;
-                str= str.replace(" ","");
-                mTextView.setText("byteArray : "+basVar.dataFromNotification );
-                String s =basVar.dataFromNotification.substring(0,2);
-                byte b=  Byte.valueOf(s,16);
-                Byte []array =new Byte[20];
-                getCharArrayOfData(array,str);
+                str = str.replace(" ", "");
+                mTextView.setText("byteArray : " + basVar.dataFromNotification);
+                String s = basVar.dataFromNotification.substring(0, 2);
+                byte b = Byte.valueOf(s, 16);
+                Byte[] array = new Byte[40];
+                Arrays.fill(array, (byte) 0);
+                getCharArrayOfData(array, str);
+                Log.d("TEMP", str);
                 fillDataBaseData(array);
-                mTextView.setText("byteArray : "+basVar.dataFromNotification +" humidity: "+humidity +
-                                  " temperature: "+ temperature + " heart rate: "+ ekg +" LUX: "+lux + " SKIN: "+gsr);
+                StringBuilder sb = new StringBuilder();
+                sb.append("HUM: " + nba[HUMIDITY].floatValue() + "\n");
+                sb.append("TEMP: " + nba[TEMPERATURE].floatValue() + "\n");
+                sb.append("GSR: " + nba[GSR].shortValue() + "\n");
+                sb.append("HR: " + nba[HR] + "\n");
+                sb.append("SPO2: " + nba[SPO2] + "\n");
+                sb.append("ECG: " + nba[ECG].intValue() + "\n");
+                sb.append("RR: " + nba[RR].intValue() + "\n");
+                mTextView.setText(sb.toString() + "\n");
                 try {
                     dataBaseSendWSProcess();
-                }catch (Exception ex){
-                    Log.d(TAG,ex.toString());
+                } catch (Exception ex) {
+                    Log.d(TAG, ex.toString());
                 }
                 dbCounter++;
-                mHandler.postDelayed(this,125);
+                mHandler.postDelayed(this, 125);
 
             }
         };
-        mHandler.postDelayed(mTimer1,500);
+        mHandler.postDelayed(mTimer1, 501);
     }
 
-    private void fillDataBaseData(Byte []array){
-        byte []tempArray = new byte[4];
-
-        for(int i= 0 ;i<5 ;i++){
-            for(int j = 0; j<4; j++){
-                tempArray[j]=array[(i*4)+j];
+    private void fillDataBaseData(Byte[] array) {
+        for (int i = 0; i < nbs.length; i++) {
+            byte[] tempArray = new byte[nbs[i].intValue()];
+            for (int j = 0; j < nbs[i].intValue(); j++) {
+                tempArray[j] = array[(nbo[i].intValue()) + j];
             }
-            if(i==0){
-                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                humidity = wrapped.getFloat();
-                dataAppendProcess(HUMIDITY,tempArray);
+            ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+            dataAppendProcess(i, tempArray);
+            if (i == HUMIDITY || i == TEMPERATURE) {
+                nba[i] = wrapped.getFloat();
+            } else if(nbs[i].intValue() == 2) {
+                nba[i] =  wrapped.getShort();
+            }else if(nbs[i].intValue() == 1) {
+                nba[i] =  (int)wrapped.get()%0xFF;
+            }else{
+                nba[i] = wrapped.getInt();
             }
-
-            if(i==1){
-                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                temperature = wrapped.getFloat();
-                dataAppendProcess(TEMPERATURE,tempArray);
-            }
-
-            if(i==2){
-                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                ekg = wrapped.getInt();
-                dataAppendProcess(HR,tempArray);
-            }
-
-            if(i==3){
-                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                lux = wrapped.getInt();
-                dataAppendProcess(LUX,tempArray);
-            }
-
-            if(i==4){
-                ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-                gsr = wrapped.getInt();
-                dataAppendProcess(SKIN,tempArray);
-            }
-
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    private  void dataBaseSendWSProcess(){
+    private void dataBaseSendWSProcess() {
+        if(si7021.getCounter() < 300)
+            return;
+        mTextView.setText("Data send to db");
+        sw.setSensorInfo(max3003);
+        sw.setSensorInfo(max30102);
+        sw.setSensorInfo(si7021);
+        sw.setSensorInfo(skinResistance);
+        resetCounterAndData();
+        /*
         if(dbCounter==MAX_BYTE_LENGTH){
             //send data process  to server
             mTextView.setText("counter finished");
@@ -171,8 +176,8 @@ public class DataCollectActivity extends AppCompatActivity {
 
                 @Override
                 public void run() {
-                    sw.setSensorInfo(SmartWatchServer.LUX,dataToSendDBLUX);
-                    dataToSendDBLUX ="";
+                    sw.setSensorInfo(SmartWatchServer.LUX, dataToSendHr);
+                    dataToSendHr ="";
                 }
             },1);
 
@@ -180,24 +185,24 @@ public class DataCollectActivity extends AppCompatActivity {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    sw.setSensorInfo(SmartWatchServer.HUMIDITY,dataToSendDBHumidity);
-                    dataToSendDBHumidity ="";
+                    sw.setSensorInfo(SmartWatchServer.HUMIDITY, dataToSendHumidity);
+                    dataToSendHumidity ="";
                 }
             },25);
 
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    sw.setSensorInfo(SmartWatchServer.TEMPERATURE,dataToSendDBTemperature);
-                    dataToSendDBTemperature ="";
+                    sw.setSensorInfo(SmartWatchServer.TEMPERATURE, dataToSendTemperature);
+                    dataToSendTemperature ="";
                 }
             },50);
 
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    sw.setSensorInfo(SmartWatchServer.HR,dataToSendDBEKG);
-                    dataToSendDBEKG ="";
+                    sw.setSensorInfo(SmartWatchServer.HR, dataToSendEcg);
+                    dataToSendEcg ="";
                 }
             },75);
 
@@ -205,33 +210,71 @@ public class DataCollectActivity extends AppCompatActivity {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    sw.setSensorInfo(SmartWatchServer.SKIN,dataToSendDBGSR);
-                    dataToSendDBGSR ="";
+                    sw.setSensorInfo(SmartWatchServer.SKIN, dataToSendSpo2);
+                    dataToSendSpo2 ="";
                 }
             },100);
         }
+
+         */
     }
 
-    private void dataAppendProcess(int data_type, byte[] array){
+    private void resetCounterAndData() {
+        //reset si7021
+        si7021.setCounter(0);
+        si7021.getHumidityByte().setLength(0);
+        si7021.getTemperatureByte().setLength(0);
+        //reset Max3003
+        max3003.setCounter(0);
+        max3003.getEcg().setLength(0);
+        max3003.getRr().setLength(0);
+        //reset max30102
+        max30102.setCounter(0);
+        max30102.getHr().setLength(0);
+        max30102.getSpo2().setLength(0);
+        //skin resistance
+        skinResistance.setCounter(0);
+        skinResistance.getSkinResistance().setLength(0);
+    }
 
-            if(data_type==LUX){
-                dataToSendDBLUX = dataToSendDBLUX +bytesToHex (array);
-            }else if(data_type==HUMIDITY){
-                dataToSendDBHumidity = dataToSendDBHumidity +bytesToHex (array);
-            }
-            else if(data_type==TEMPERATURE){
-                dataToSendDBTemperature = dataToSendDBTemperature + bytesToHex (array);
-            }
-            else if(data_type==HR){
-                dataToSendDBEKG = dataToSendDBEKG + bytesToHex (array);
-            }
-            else if(data_type==SKIN){
-                dataToSendDBGSR = dataToSendDBGSR + bytesToHex (array);
-            }
+    private void dataAppendProcess(int data_type, byte[] array) {
+        if(si7021.getCounter()>=300 && data_type == HUMIDITY )
+            return;
+        if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
+            si7021.setType("environment");
+            si7021.setCounter(si7021.getCounter()+1);
+            si7021.setHumidityByte(si7021.getHumidityByte().append(bytesToHex(array)));
+            si7021.setDate(new Date());
+        } else if (data_type == TEMPERATURE) {
+           si7021.setTemperatureByte(si7021.getTemperatureByte().append(bytesToHex(array)));
+            si7021.setDate(new Date());
+        } else if (data_type == GSR) {
+            skinResistance.setType("skin");
+            skinResistance.setCounter(skinResistance.getCounter()+1);
+            skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(array)));
+            skinResistance.setDate(new Date());
+        } else if (data_type == HR) { // HR and SPO2 are gathered from same  sensor
+            max30102.setType("heart");
+            max30102.setCounter(max30102.getCounter()+1);
+            max30102.setHr(max30102.getHr().append(bytesToHex(array)));
+            max30102.setDate(new Date());
+        } else if (data_type == SPO2) {
+            max30102.setSpo2(max30102.getSpo2().append(bytesToHex(array)));
+            max30102.setDate(new Date());;
+        } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
+            max3003.setType("heart");
+            max3003.setCounter(max3003.getCounter()+1);
+            max3003.setEcg(max3003.getEcg().append(bytesToHex(array)));
+            max3003.setDate(new Date());
+        } else if (data_type == RR) {
+            max3003.setRr(max3003.getRr().append(bytesToHex(array)));
+            max3003.setDate(new Date());
+        }
     }
 
 
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
@@ -246,6 +289,6 @@ public class DataCollectActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         mHandler.removeCallbacks(mTimer1);
-        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID,false);
+        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID, false);
     }
 }

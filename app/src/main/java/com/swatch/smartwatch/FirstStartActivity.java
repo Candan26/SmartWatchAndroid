@@ -141,7 +141,7 @@ public class FirstStartActivity extends AppCompatActivity {
         finish();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+
     private void scanLeDevice(final boolean enable) {
         if(enable){
             // Stops scanning after a pre-defined scan period.
