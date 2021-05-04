@@ -46,10 +46,18 @@ public class SmartWatchServer extends Service {
     private static final String TAG = "WS";
     private static String UserInfoSubPageURL= "/api/userInfo";
     private static String EmailSubPageURL= "/api/email";
+
     private static String SkinSensorSubPageURL= "/api/skin";
+    private static String SkinSensorSubPageURLOnline= "/api/skin/queue";
+
     private static String Max3003SubPageURL= "/api/max3003";
+    private static String Max3003SubPageURLOnline= "/api/max3003/queue";
+
     private static String Max30102SubPageURL= "/api/max30102";
+    private static String Max30102SubPageURLOnline= "/api/max30102/queue";
+
     private static String Si7021SubPageURL= "/api/si7021";
+    private static String Si7021SubPageURLOnline= "/api/si7021/queue";
 
     public static final  String SKIN= "skin";
     public static final  String EMAIL= "email";
@@ -79,9 +87,14 @@ public class SmartWatchServer extends Service {
         userInfoList= new ArrayList<>();
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void setSensorInfo(Max3003 max3003){
+    public void setSensorInfo(Max3003 max3003 , String type){
         RequestQueue queue = Volley.newRequestQueue(mContext);
-        String url = "http://" + mIp + ":" + mPort + Max3003SubPageURL;
+        String subPageUrl = "";
+        if(type.equals("online"))
+            subPageUrl = Max3003SubPageURLOnline;
+        else
+            subPageUrl = Max3003SubPageURL;
+        String url = "http://" + mIp + ":" + mPort + subPageUrl;
         Log.d(TAG, "url name " + url);
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("status", max3003.getType());
@@ -94,9 +107,14 @@ public class SmartWatchServer extends Service {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void setSensorInfo(Max30102 max30102){
+    public void setSensorInfo(Max30102 max30102 , String type){
         RequestQueue queue = Volley.newRequestQueue(mContext);
-        String url = "http://" + mIp + ":" + mPort + Max30102SubPageURL;
+        String subPageUrl = "";
+        if(type.equals("online"))
+            subPageUrl = Max30102SubPageURLOnline;
+        else
+            subPageUrl = Max30102SubPageURL;
+        String url = "http://" + mIp + ":" + mPort + subPageUrl;
         Log.d(TAG, "url name " + url);
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("status", max30102.getType());
@@ -110,9 +128,14 @@ public class SmartWatchServer extends Service {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void setSensorInfo(Si7021 si7021){
+    public void setSensorInfo(Si7021 si7021 , String type){
         RequestQueue queue = Volley.newRequestQueue(mContext);
-        String url = "http://" + mIp + ":" + mPort + Si7021SubPageURL;
+        String subPageUrl = "";
+        if(type.equals("online"))
+            subPageUrl = Si7021SubPageURLOnline;
+        else
+            subPageUrl = Si7021SubPageURL;
+        String url = "http://" + mIp + ":" + mPort + subPageUrl;
         Log.d(TAG, "url name " + url);
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("status", si7021.getType());
@@ -125,9 +148,15 @@ public class SmartWatchServer extends Service {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void setSensorInfo(SkinResistance skinResistance){
+    public void setSensorInfo(SkinResistance skinResistance , String type){
         RequestQueue queue = Volley.newRequestQueue(mContext);
-        String url = "http://" + mIp + ":" + mPort + SkinSensorSubPageURL;
+        String subPageUrl = "";
+        if(type.equals("online"))
+            subPageUrl = SkinSensorSubPageURLOnline;
+        else
+            subPageUrl = SkinSensorSubPageURL;
+
+        String url = "http://" + mIp + ":" + mPort + subPageUrl;
         Log.d(TAG, "url name " + url);
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("status", skinResistance.getType());
@@ -158,7 +187,7 @@ public class SmartWatchServer extends Service {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public void setSensorInfo(final String sensorType, final String data){
+    public void setSensorInfoDepricated(final String sensorType, final String data){
         StringBuffer response = null;
         RequestQueue queue = Volley.newRequestQueue(mContext);
 

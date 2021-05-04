@@ -20,6 +20,18 @@
         tools:layout_editor_absoluteX="123dp"
         tools:layout_editor_absoluteY="310dp" />
 
+    <Switch
+        android:id="@+id/swOnlineData"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Online Data Stream" />
+
+    <Switch
+        android:id="@+id/swSaveData"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Data On MongoDB" />
+
     <TextView
         android:id="@+id/textViewDataCollect"
         android:layout_width="267dp"
@@ -28,4 +40,5 @@
         tools:layout_editor_absoluteX="143dp"
         tools:layout_editor_absoluteY="479dp"
         tools:text="ESR Sensor Values" />
+
 </LinearLayout>

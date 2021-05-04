@@ -119,7 +119,7 @@ public class EmailFragment extends Fragment {
                 Log.d("TEST","sending email to user");
                 String mailData =getMailData();
                 if(mailData!=null)
-                    sw.setSensorInfo(SmartWatchServer.EMAIL,mailData);
+                    sw.setSensorInfoDepricated(SmartWatchServer.EMAIL,mailData);
                 getActivity().onBackPressed();
             }
         });

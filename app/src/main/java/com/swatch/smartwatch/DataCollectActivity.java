@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.swatch.smartwatch.fragment.EmailFragment;
@@ -32,6 +33,8 @@ public class DataCollectActivity extends AppCompatActivity {
     private TextView mTextView;
     private ImageView mImageView;
     private BaseActivity basVar;
+    private Switch mSwtich;
+    private Switch mSwitchSaveData;
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
 
@@ -47,10 +50,13 @@ public class DataCollectActivity extends AppCompatActivity {
     public static Number[] nbs = {4, 4, 2, 1, 1, 4, 4};//size of each data
     public static Number[] nbo = {0, 4, 8, 10, 11, 12, 16};//size of each data
 
-    Max3003 max3003;
-    Max30102 max30102;
-    Si7021 si7021;
-    SkinResistance skinResistance;
+    public Boolean switchState = false;
+    public final String TYPE_DATABASE = "database";
+    public final String TYPE_ONLINE = "online";
+    Max3003 max3003, oMax3003;
+    Max30102 max30102, oMax30102;
+    Si7021 si7021, oSi7021;
+    SkinResistance skinResistance, oSkinResistance;
 
 
     private SmartWatchServer sw;
@@ -65,6 +71,13 @@ public class DataCollectActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.textViewDataCollect);
         mImageView = findViewById(R.id.imageViewDataCollect);
 
+        mSwtich = (Switch) findViewById(R.id.swOnlineData);
+        mSwitchSaveData = (Switch) findViewById(R.id.swSaveData);
+
+        mSwtich.setChecked(false);
+        mSwitchSaveData.setChecked(false);
+        switchState = mSwtich.isChecked();
+
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -78,10 +91,19 @@ public class DataCollectActivity extends AppCompatActivity {
         });
         basVar = (BaseActivity) getApplicationContext();
         basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID, true);
-        max3003  = new Max3003();
+
+        max3003 = new Max3003();
+        oMax3003 = new Max3003();
+
         max30102 = new Max30102();
+        oMax30102 = new Max30102();
+
         si7021 = new Si7021();
+        oSi7021 = new Si7021();
+
         skinResistance = new SkinResistance();
+        oSkinResistance = new SkinResistance();
+
         sw = new SmartWatchServer(this);
         plotData();
     }
@@ -107,8 +129,8 @@ public class DataCollectActivity extends AppCompatActivity {
                 String str = basVar.dataFromNotification;
                 str = str.replace(" ", "");
                 mTextView.setText("byteArray : " + basVar.dataFromNotification);
-                String s = basVar.dataFromNotification.substring(0, 2);
-                byte b = Byte.valueOf(s, 16);
+                //String s = basVar.dataFromNotification.substring(0, 2);
+                //byte b = Byte.valueOf(s, 16);
                 Byte[] array = new Byte[40];
                 Arrays.fill(array, (byte) 0);
                 getCharArrayOfData(array, str);
@@ -124,7 +146,10 @@ public class DataCollectActivity extends AppCompatActivity {
                 sb.append("RR: " + nba[RR].intValue() + "\n");
                 mTextView.setText(sb.toString() + "\n");
                 try {
-                    dataBaseSendWSProcess();
+                    if(mSwitchSaveData.isChecked()){
+                        dataBaseSendWSProcess();
+                    }
+                    dataBaseSendWSProcessOnline();
                 } catch (Exception ex) {
                     Log.d(TAG, ex.toString());
                 }
@@ -143,137 +168,62 @@ public class DataCollectActivity extends AppCompatActivity {
                 tempArray[j] = array[(nbo[i].intValue()) + j];
             }
             ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-            dataAppendProcess(i, tempArray);
+            if (mSwitchSaveData.isChecked()) {
+                dataAppendProcess(i, tempArray);
+            }
+            if (mSwtich.isChecked()) {
+                dataAppendReal(i, tempArray);
+            }
             if (i == HUMIDITY || i == TEMPERATURE) {
                 nba[i] = wrapped.getFloat();
-            } else if(nbs[i].intValue() == 2) {
-                nba[i] =  wrapped.getShort();
-            }else if(nbs[i].intValue() == 1) {
-                nba[i] =  (int)wrapped.get()%0xFF;
-            }else{
+            } else if (nbs[i].intValue() == 2) {
+                nba[i] = wrapped.getShort();
+            } else if (nbs[i].intValue() == 1) {
+                nba[i] = (int) wrapped.get() % 0xFF;
+            } else {
                 nba[i] = wrapped.getInt();
             }
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private void dataBaseSendWSProcess() {
-        if(si7021.getCounter() < 300)
-            return;
-        mTextView.setText("Data send to db");
-        sw.setSensorInfo(max3003);
-        sw.setSensorInfo(max30102);
-        sw.setSensorInfo(si7021);
-        sw.setSensorInfo(skinResistance);
-        resetCounterAndData();
-        /*
-        if(dbCounter==MAX_BYTE_LENGTH){
-            //send data process  to server
-            mTextView.setText("counter finished");
-            dbCounter=0;
-
-            new Handler().postDelayed(new Runnable() {
-
-                @Override
-                public void run() {
-                    sw.setSensorInfo(SmartWatchServer.LUX, dataToSendHr);
-                    dataToSendHr ="";
-                }
-            },1);
-
-
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    sw.setSensorInfo(SmartWatchServer.HUMIDITY, dataToSendHumidity);
-                    dataToSendHumidity ="";
-                }
-            },25);
-
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    sw.setSensorInfo(SmartWatchServer.TEMPERATURE, dataToSendTemperature);
-                    dataToSendTemperature ="";
-                }
-            },50);
-
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    sw.setSensorInfo(SmartWatchServer.HR, dataToSendEcg);
-                    dataToSendEcg ="";
-                }
-            },75);
-
-
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    sw.setSensorInfo(SmartWatchServer.SKIN, dataToSendSpo2);
-                    dataToSendSpo2 ="";
-                }
-            },100);
-        }
-
-         */
-    }
-
-    private void resetCounterAndData() {
-        //reset si7021
-        si7021.setCounter(0);
-        si7021.getHumidityByte().setLength(0);
-        si7021.getTemperatureByte().setLength(0);
-        //reset Max3003
-        max3003.setCounter(0);
-        max3003.getEcg().setLength(0);
-        max3003.getRr().setLength(0);
-        //reset max30102
-        max30102.setCounter(0);
-        max30102.getHr().setLength(0);
-        max30102.getSpo2().setLength(0);
-        //skin resistance
-        skinResistance.setCounter(0);
-        skinResistance.getSkinResistance().setLength(0);
-    }
-
-    private void dataAppendProcess(int data_type, byte[] array) {
-        if(si7021.getCounter()>=300 && data_type == HUMIDITY )
+    private void dataAppendReal(int data_type, byte[] array) {
+        if (oSi7021.getCounter() >= 5 && data_type == HUMIDITY)
             return;
         if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
-            si7021.setType("environment");
-            si7021.setCounter(si7021.getCounter()+1);
-            si7021.setHumidityByte(si7021.getHumidityByte().append(bytesToHex(array)));
-            si7021.setDate(new Date());
+            oSi7021.setType("environment");
+            oSi7021.setCounter(oSi7021.getCounter() + 1);
+            oSi7021.setHumidityByte(oSi7021.getHumidityByte().append(bytesToHex(array)));
+            oSi7021.setDate(new Date());
         } else if (data_type == TEMPERATURE) {
-           si7021.setTemperatureByte(si7021.getTemperatureByte().append(bytesToHex(array)));
-            si7021.setDate(new Date());
+            oSi7021.setTemperatureByte(oSi7021.getTemperatureByte().append(bytesToHex(array)));
+            oSi7021.setDate(new Date());
         } else if (data_type == GSR) {
-            skinResistance.setType("skin");
-            skinResistance.setCounter(skinResistance.getCounter()+1);
-            skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(array)));
-            skinResistance.setDate(new Date());
+            oSkinResistance.setType("skin");
+            oSkinResistance.setCounter(oSkinResistance.getCounter() + 1);
+            oSkinResistance.setSkinResistance(oSkinResistance.getSkinResistance().append(bytesToHex(array)));
+            oSkinResistance.setDate(new Date());
         } else if (data_type == HR) { // HR and SPO2 are gathered from same  sensor
-            max30102.setType("heart");
-            max30102.setCounter(max30102.getCounter()+1);
-            max30102.setHr(max30102.getHr().append(bytesToHex(array)));
-            max30102.setDate(new Date());
+            oMax30102.setType("heart");
+            oMax30102.setCounter(oMax30102.getCounter() + 1);
+            oMax30102.setHr(oMax30102.getHr().append(bytesToHex(array)));
+            oMax30102.setDate(new Date());
         } else if (data_type == SPO2) {
-            max30102.setSpo2(max30102.getSpo2().append(bytesToHex(array)));
-            max30102.setDate(new Date());;
+            oMax30102.setSpo2(oMax30102.getSpo2().append(bytesToHex(array)));
+            oMax30102.setDate(new Date());
         } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
-            max3003.setType("heart");
-            max3003.setCounter(max3003.getCounter()+1);
-            max3003.setEcg(max3003.getEcg().append(bytesToHex(array)));
-            max3003.setDate(new Date());
+            oMax3003.setType("heart");
+            oMax3003.setCounter(oMax3003.getCounter() + 1);
+            oMax3003.setEcg(oMax3003.getEcg().append(bytesToHex(array)));
+            oMax3003.setDate(new Date());
         } else if (data_type == RR) {
-            max3003.setRr(max3003.getRr().append(bytesToHex(array)));
-            max3003.setDate(new Date());
+            oMax3003.setRr(oMax3003.getRr().append(bytesToHex(array)));
+            oMax3003.setDate(new Date());
         }
     }
 
 
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
 
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
@@ -284,6 +234,108 @@ public class DataCollectActivity extends AppCompatActivity {
         }
         return new String(hexChars);
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void dataBaseSendWSProcessOnline() {
+        if (oSi7021.getCounter() < 5)
+            return;
+        StringBuilder sb = new StringBuilder();
+        sb.append(" \n \n \n Data send to Online \n \n \n \n");
+        mTextView.setText(sb.toString() + "\n");
+        sw.setSensorInfo(oMax3003, TYPE_ONLINE);
+        sw.setSensorInfo(oMax30102, TYPE_ONLINE);
+        sw.setSensorInfo(oSi7021, TYPE_ONLINE);
+        sw.setSensorInfo(oSkinResistance, TYPE_ONLINE);
+
+        resetCounterAndData(TYPE_ONLINE);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void dataBaseSendWSProcess() {
+        if (si7021.getCounter() < 300)
+            return;
+        StringBuilder sb = new StringBuilder();
+        sb.append(" \n \n \n Data send to db \n \n \n \n");
+        mTextView.setText(sb.toString() + "\n");
+        sw.setSensorInfo(max3003, TYPE_DATABASE);
+        sw.setSensorInfo(max30102, TYPE_DATABASE);
+        sw.setSensorInfo(si7021, TYPE_DATABASE);
+        sw.setSensorInfo(skinResistance, TYPE_DATABASE);
+
+        resetCounterAndData(TYPE_DATABASE);
+    }
+
+    private void resetCounterAndData(String type) {
+        if (type.equals(TYPE_DATABASE)) {
+            //reset si7021
+            si7021.setCounter(0);
+            si7021.getHumidityByte().setLength(0);
+            si7021.getTemperatureByte().setLength(0);
+            //reset Max3003
+            max3003.setCounter(0);
+            max3003.getEcg().setLength(0);
+            max3003.getRr().setLength(0);
+            //reset max30102
+            max30102.setCounter(0);
+            max30102.getHr().setLength(0);
+            max30102.getSpo2().setLength(0);
+            //skin resistance
+            skinResistance.setCounter(0);
+            skinResistance.getSkinResistance().setLength(0);
+        } else {
+            oSi7021.setCounter(0);
+            oSi7021.getHumidityByte().setLength(0);
+            oSi7021.getTemperatureByte().setLength(0);
+            //reset Max3003
+            oMax3003.setCounter(0);
+            oMax3003.getEcg().setLength(0);
+            oMax3003.getRr().setLength(0);
+            //reset max30102
+            oMax30102.setCounter(0);
+            oMax30102.getHr().setLength(0);
+            oMax30102.getSpo2().setLength(0);
+            //skin resistance
+            oSkinResistance.setCounter(0);
+            oSkinResistance.getSkinResistance().setLength(0);
+        }
+
+    }
+
+    private void dataAppendProcess(int data_type, byte[] array) {
+        if (si7021.getCounter() >= 300 && data_type == HUMIDITY)
+            return;
+        if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
+            si7021.setType("environment");
+            si7021.setCounter(si7021.getCounter() + 1);
+            si7021.setHumidityByte(si7021.getHumidityByte().append(bytesToHex(array)));
+            si7021.setDate(new Date());
+        } else if (data_type == TEMPERATURE) {
+            si7021.setTemperatureByte(si7021.getTemperatureByte().append(bytesToHex(array)));
+            si7021.setDate(new Date());
+        } else if (data_type == GSR) {
+            skinResistance.setType("skin");
+            skinResistance.setCounter(skinResistance.getCounter() + 1);
+            skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(array)));
+            skinResistance.setDate(new Date());
+        } else if (data_type == HR) { // HR and SPO2 are gathered from same  sensor
+            max30102.setType("heart");
+            max30102.setCounter(max30102.getCounter() + 1);
+            max30102.setHr(max30102.getHr().append(bytesToHex(array)));
+            max30102.setDate(new Date());
+        } else if (data_type == SPO2) {
+            max30102.setSpo2(max30102.getSpo2().append(bytesToHex(array)));
+            max30102.setDate(new Date());
+        } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
+            max3003.setType("heart");
+            max3003.setCounter(max3003.getCounter() + 1);
+            max3003.setEcg(max3003.getEcg().append(bytesToHex(array)));
+            max3003.setDate(new Date());
+        } else if (data_type == RR) {
+            max3003.setRr(max3003.getRr().append(bytesToHex(array)));
+            max3003.setDate(new Date());
+        }
+    }
+
 
     @Override
     protected void onPause() {
