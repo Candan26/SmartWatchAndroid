@@ -7,7 +7,25 @@ public class Max30102 {
     private String type = "";
     private StringBuilder spo2 = new StringBuilder();
     private StringBuilder hr = new StringBuilder();
+    private StringBuilder ired = new StringBuilder();
+    private StringBuilder red = new StringBuilder();
     private Date date;
+
+    public StringBuilder getIred() {
+        return ired;
+    }
+
+    public void setIred(StringBuilder ired) {
+        this.ired = ired;
+    }
+
+    public StringBuilder getRed() {
+        return red;
+    }
+
+    public void setRed(StringBuilder red) {
+        this.red = red;
+    }
 
     public int getCounter() {
         return counter;

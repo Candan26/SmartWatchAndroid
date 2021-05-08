@@ -43,12 +43,14 @@ public class DataCollectActivity extends AppCompatActivity {
     public static final int GSR = 2;
     public static final int HR = 3;
     public static final int SPO2 = 4;
-    public static final int ECG = 5;
-    public static final int RR = 6;
+    public static final int IRED = 5;
+    public static final int RED = 6;
+    public static final int RR = 7;
+    public static final int ECG = 8;
 
-    public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, ECG, RR};
-    public static Number[] nbs = {4, 4, 2, 1, 1, 4, 4};//size of each data
-    public static Number[] nbo = {0, 4, 8, 10, 11, 12, 16};//size of each data
+    public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, IRED, RED,  RR, ECG};
+    public static Number[] nbs = {4,        4,           2,   1,  1,    4,    4,    4,  30};//size of each data
+    public static Number[] nbo = {0,        4,           8,   10, 11,   12,   16,   20, 24};//location of obj
 
     public Boolean switchState = false;
     public final String TYPE_DATABASE = "database";
@@ -131,7 +133,7 @@ public class DataCollectActivity extends AppCompatActivity {
                 mTextView.setText("byteArray : " + basVar.dataFromNotification);
                 //String s = basVar.dataFromNotification.substring(0, 2);
                 //byte b = Byte.valueOf(s, 16);
-                Byte[] array = new Byte[40];
+                Byte[] array = new Byte[60];
                 Arrays.fill(array, (byte) 0);
                 getCharArrayOfData(array, str);
                 Log.d("TEMP", str);
@@ -142,6 +144,8 @@ public class DataCollectActivity extends AppCompatActivity {
                 sb.append("GSR: " + nba[GSR].shortValue() + "\n");
                 sb.append("HR: " + nba[HR] + "\n");
                 sb.append("SPO2: " + nba[SPO2] + "\n");
+                sb.append("IRED: " + nba[IRED] + "\n");
+                sb.append("RED: " + nba[RED] + "\n");
                 sb.append("ECG: " + nba[ECG].intValue() + "\n");
                 sb.append("RR: " + nba[RR].intValue() + "\n");
                 mTextView.setText(sb.toString() + "\n");
@@ -180,8 +184,10 @@ public class DataCollectActivity extends AppCompatActivity {
                 nba[i] = wrapped.getShort();
             } else if (nbs[i].intValue() == 1) {
                 nba[i] = (int) wrapped.get() % 0xFF;
-            } else {
+            } else if(nbs[i].intValue() == 4)  {
                 nba[i] = wrapped.getInt();
+            }else{
+                nba[i] = wrapped.get(0);
             }
         }
     }
@@ -210,13 +216,19 @@ public class DataCollectActivity extends AppCompatActivity {
         } else if (data_type == SPO2) {
             oMax30102.setSpo2(oMax30102.getSpo2().append(bytesToHex(array)));
             oMax30102.setDate(new Date());
+        }
+        else if(data_type == IRED){
+            oMax30102.setIred(oMax30102.getIred().append(bytesToHex(array)));
+        }
+        else if(data_type == RED){
+            oMax30102.setRed(oMax30102.getRed().append(bytesToHex(array)));
+        } else if (data_type == RR) {
+            oMax3003.setRr(oMax3003.getRr().append(bytesToHex(array)));
+            oMax3003.setDate(new Date());
         } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
             oMax3003.setType("heart");
             oMax3003.setCounter(oMax3003.getCounter() + 1);
             oMax3003.setEcg(oMax3003.getEcg().append(bytesToHex(array)));
-            oMax3003.setDate(new Date());
-        } else if (data_type == RR) {
-            oMax3003.setRr(oMax3003.getRr().append(bytesToHex(array)));
             oMax3003.setDate(new Date());
         }
     }
@@ -325,13 +337,17 @@ public class DataCollectActivity extends AppCompatActivity {
         } else if (data_type == SPO2) {
             max30102.setSpo2(max30102.getSpo2().append(bytesToHex(array)));
             max30102.setDate(new Date());
+        } else if(data_type == IRED){
+            max30102.setIred(max30102.getIred().append(bytesToHex(array)));
+        } else if(data_type == RED){
+            max30102.setRed(max30102.getRed().append(bytesToHex(array)));
+        } else if (data_type == RR) {
+            max3003.setRr(max3003.getRr().append(bytesToHex(array)));
+            max3003.setDate(new Date());
         } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
             max3003.setType("heart");
             max3003.setCounter(max3003.getCounter() + 1);
             max3003.setEcg(max3003.getEcg().append(bytesToHex(array)));
-            max3003.setDate(new Date());
-        } else if (data_type == RR) {
-            max3003.setRr(max3003.getRr().append(bytesToHex(array)));
             max3003.setDate(new Date());
         }
     }
