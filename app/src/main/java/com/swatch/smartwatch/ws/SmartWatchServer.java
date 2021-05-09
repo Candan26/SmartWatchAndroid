@@ -120,6 +120,8 @@ public class SmartWatchServer extends Service {
         params.put("status", max30102.getType());
         params.put("hr", max30102.getHr().toString());
         params.put("spo2", max30102.getSpo2().toString());
+        params.put("ired", max30102.getIred().toString());
+        params.put("red", max30102.getRed().toString());
         params.put("diff", "");
         params.put("personName", personName);
         params.put("personSurname",personSurname);
