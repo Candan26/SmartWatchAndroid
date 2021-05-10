@@ -4,37 +4,76 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
+
     android:orientation="vertical"
     android:id="@+id/DataCollectLayoutId"
     tools:context=".DataCollectActivity">
 
     <ImageView
         android:id="@+id/imageViewDataCollect"
-        android:layout_width="wrap_content"
-        android:layout_height="93dp"
-        android:foregroundGravity="center"
+        android:layout_width="384dp"
+        android:layout_height="114dp"
         android:layout_marginBottom="15dp"
+        android:foregroundGravity="center"
         android:scaleType="fitXY"
         android:src="@drawable/image_data"
         tools:layout_editor_absoluteX="123dp"
         tools:layout_editor_absoluteY="310dp" />
 
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <CheckBox
+            android:id="@+id/cbSkin"
+            android:layout_width="202dp"
+            android:layout_height="wrap_content"
+            android:text="SKIN" />
+        <CheckBox
+            android:id="@+id/cbHrSpo2"
+            android:layout_width="121dp"
+            android:layout_height="wrap_content"
+            android:text="HR SPO2" />
+    </LinearLayout>
+
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <CheckBox
+        android:id="@+id/cbEcgRR"
+        android:layout_width="202dp"
+        android:layout_height="wrap_content"
+        android:text="ECG  RR" />
+
+    <CheckBox
+        android:id="@+id/cbTempHumid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Temperature  Humidity" />
+
+</LinearLayout>
+
+
     <Switch
         android:id="@+id/swOnlineData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Online Data Stream" />
+        android:text="Online Data Stream"
+        android:paddingBottom="5dp"
+        android:layout_marginBottom="5dp"/>
 
     <Switch
         android:id="@+id/swSaveData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Save Data On MongoDB" />
+        android:text="Save Data On MongoDB"
+        android:layout_marginBottom="5dp"/>
 
     <TextView
         android:id="@+id/textViewDataCollect"
-        android:layout_width="267dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         tools:layout_editor_absoluteX="143dp"

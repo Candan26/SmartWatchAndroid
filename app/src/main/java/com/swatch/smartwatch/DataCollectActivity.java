@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -35,6 +36,11 @@ public class DataCollectActivity extends AppCompatActivity {
     private BaseActivity basVar;
     private Switch mSwtich;
     private Switch mSwitchSaveData;
+    private CheckBox mCheckBoxEcgRr;
+    private CheckBox mCheckBoxHrSpo2;
+    private CheckBox mCheckBoxSkin;
+    private CheckBox mCheckBoxTemperatureHumidity;
+
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
 
@@ -52,7 +58,6 @@ public class DataCollectActivity extends AppCompatActivity {
     public static Number[] nbs = {4,        4,           2,   1,  1,    4,    4,    4,  30};//size of each data
     public static Number[] nbo = {0,        4,           8,   10, 11,   12,   16,   20, 24};//location of obj
 
-    public Boolean switchState = false;
     public final String TYPE_DATABASE = "database";
     public final String TYPE_ONLINE = "online";
     Max3003 max3003, oMax3003;
@@ -76,9 +81,19 @@ public class DataCollectActivity extends AppCompatActivity {
         mSwtich = (Switch) findViewById(R.id.swOnlineData);
         mSwitchSaveData = (Switch) findViewById(R.id.swSaveData);
 
+        mCheckBoxEcgRr = (CheckBox) findViewById(R.id.cbEcgRR);
+        mCheckBoxHrSpo2 = (CheckBox)findViewById(R.id.cbHrSpo2);
+        mCheckBoxSkin = (CheckBox)findViewById(R.id.cbSkin);
+        mCheckBoxTemperatureHumidity = (CheckBox)findViewById(R.id.cbTempHumid);
+
+        mCheckBoxEcgRr.setChecked(true);
+        mCheckBoxHrSpo2.setChecked(true);
+        mCheckBoxSkin.setChecked(true);
+        mCheckBoxTemperatureHumidity.setChecked(true);
+
         mSwtich.setChecked(false);
         mSwitchSaveData.setChecked(false);
-        switchState = mSwtich.isChecked();
+
 
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -254,11 +269,14 @@ public class DataCollectActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append(" \n \n \n Data send to Online \n \n \n \n");
         mTextView.setText(sb.toString() + "\n");
-        sw.setSensorInfo(oMax3003, TYPE_ONLINE);
-        sw.setSensorInfo(oMax30102, TYPE_ONLINE);
-        sw.setSensorInfo(oSi7021, TYPE_ONLINE);
-        sw.setSensorInfo(oSkinResistance, TYPE_ONLINE);
-
+        if(mCheckBoxEcgRr.isChecked() == true)
+            sw.setSensorInfo(oMax3003, TYPE_ONLINE);
+        if(mCheckBoxHrSpo2.isChecked() == true)
+            sw.setSensorInfo(oMax30102, TYPE_ONLINE);
+        if(mCheckBoxTemperatureHumidity.isChecked() == true)
+            sw.setSensorInfo(oSi7021, TYPE_ONLINE);
+        if(mCheckBoxSkin.isChecked() == true)
+            sw.setSensorInfo(oSkinResistance, TYPE_ONLINE);
         resetCounterAndData(TYPE_ONLINE);
     }
 
@@ -269,11 +287,14 @@ public class DataCollectActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append(" \n \n \n Data send to db \n \n \n \n");
         mTextView.setText(sb.toString() + "\n");
-        sw.setSensorInfo(max3003, TYPE_DATABASE);
-        sw.setSensorInfo(max30102, TYPE_DATABASE);
-        sw.setSensorInfo(si7021, TYPE_DATABASE);
-        sw.setSensorInfo(skinResistance, TYPE_DATABASE);
-
+        if(mCheckBoxEcgRr.isChecked() == true)
+            sw.setSensorInfo(max3003, TYPE_DATABASE);
+        if(mCheckBoxHrSpo2.isChecked() == true)
+            sw.setSensorInfo(max30102, TYPE_DATABASE);
+        if(mCheckBoxTemperatureHumidity.isChecked() == true)
+            sw.setSensorInfo(si7021, TYPE_DATABASE);
+        if(mCheckBoxSkin.isChecked() == true)
+            sw.setSensorInfo(skinResistance, TYPE_DATABASE);
         resetCounterAndData(TYPE_DATABASE);
     }
 
@@ -291,6 +312,8 @@ public class DataCollectActivity extends AppCompatActivity {
             max30102.setCounter(0);
             max30102.getHr().setLength(0);
             max30102.getSpo2().setLength(0);
+            max30102.getIred().setLength(0);
+            max30102.getRed().setLength(0);
             //skin resistance
             skinResistance.setCounter(0);
             skinResistance.getSkinResistance().setLength(0);
@@ -306,6 +329,8 @@ public class DataCollectActivity extends AppCompatActivity {
             oMax30102.setCounter(0);
             oMax30102.getHr().setLength(0);
             oMax30102.getSpo2().setLength(0);
+            oMax30102.getIred().setLength(0);
+            oMax30102.getRed().setLength(0);
             //skin resistance
             oSkinResistance.setCounter(0);
             oSkinResistance.getSkinResistance().setLength(0);
