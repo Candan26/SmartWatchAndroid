@@ -66,4 +66,17 @@ public class Max30102 {
     public void setDate(Date date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "Max30102{" +
+                "counter=" + counter +
+                ", type='" + type + '\'' +
+                ", spo2=" + spo2 +
+                ", hr=" + hr +
+                ", ired=" + ired +
+                ", red=" + red +
+                ", date=" + date +
+                '}';
+    }
 }

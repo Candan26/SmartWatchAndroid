@@ -39,4 +39,14 @@ public class SkinResistance {
     public void setDate(Date date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "SkinResistance{" +
+                "counter=" + counter +
+                ", type='" + type + '\'' +
+                ", skinResistance=" + skinResistance +
+                ", date=" + date +
+                '}';
+    }
 }

@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -23,8 +24,12 @@ import com.swatch.smartwatch.sensors.SkinResistance;
 import com.swatch.smartwatch.ws.SmartWatchServer;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class DataCollectActivity extends AppCompatActivity {
 
@@ -34,12 +39,15 @@ public class DataCollectActivity extends AppCompatActivity {
     private TextView mTextView;
     private ImageView mImageView;
     private BaseActivity basVar;
-    private Switch mSwtich;
+    private Switch mSwitchOnlineData;
     private Switch mSwitchSaveData;
     private CheckBox mCheckBoxEcgRr;
     private CheckBox mCheckBoxHrSpo2;
     private CheckBox mCheckBoxSkin;
     private CheckBox mCheckBoxTemperatureHumidity;
+
+    private EditText mEdtOnlineDataCounter;
+    private EditText mEdtMongoDbDataCounter;
 
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
@@ -51,12 +59,16 @@ public class DataCollectActivity extends AppCompatActivity {
     public static final int SPO2 = 4;
     public static final int IRED = 5;
     public static final int RED = 6;
-    public static final int RR = 7;
-    public static final int ECG = 8;
+    public static final int RR_COUNTER = 7;
+    public static final int RR = 8;
+    public static final int BPM_COUNTER = 9;
+    public static final int BPM = 10;
+    public static final int ECG_COUNTER = 11;
+    public static final int ECG = 12;
 
-    public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, IRED, RED,  RR, ECG};
-    public static Number[] nbs = {4,        4,           2,   1,  1,    4,    4,    4,  30};//size of each data
-    public static Number[] nbo = {0,        4,           8,   10, 11,   12,   16,   20, 24};//location of obj
+    public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, IRED, RED,  RR_COUNTER, RR, BPM_COUNTER, BPM, ECG_COUNTER, ECG};
+    public static Number[] nbs = {4,        4,           2,   1,  1,    4,    4,    1,          20, 1,           20,  2,           320};//size of each data
+    public static Number[] nbo = {0,        4,           8,   10, 11,   12,   16,   20,         21, 41,          42,  62,          64};//location of obj
 
     public final String TYPE_DATABASE = "database";
     public final String TYPE_ONLINE = "online";
@@ -65,10 +77,18 @@ public class DataCollectActivity extends AppCompatActivity {
     Si7021 si7021, oSi7021;
     SkinResistance skinResistance, oSkinResistance;
 
+    public LinkedBlockingQueue<Max3003> lbgOnlineMax3003 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Max30102> lbgOnlineMax30102 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Si7021> lbgOnlineSi7021 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<SkinResistance> lbgOnlineSkinResistance = new LinkedBlockingQueue<>();
+
+
 
     private SmartWatchServer sw;
 
     int dbCounter = 0;
+    int onlineDataCounter = 1;
+    int mongoDataCounter = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,20 +98,21 @@ public class DataCollectActivity extends AppCompatActivity {
         mTextView = findViewById(R.id.textViewDataCollect);
         mImageView = findViewById(R.id.imageViewDataCollect);
 
-        mSwtich = (Switch) findViewById(R.id.swOnlineData);
-        mSwitchSaveData = (Switch) findViewById(R.id.swSaveData);
+        mSwitchOnlineData = (Switch) findViewById(R.id.swOnlineData);
+        mSwitchSaveData = (Switch) findViewById(R.id.swSaveDataOnMongo);
 
         mCheckBoxEcgRr = (CheckBox) findViewById(R.id.cbEcgRR);
         mCheckBoxHrSpo2 = (CheckBox)findViewById(R.id.cbHrSpo2);
         mCheckBoxSkin = (CheckBox)findViewById(R.id.cbSkin);
         mCheckBoxTemperatureHumidity = (CheckBox)findViewById(R.id.cbTempHumid);
-
+        mEdtOnlineDataCounter =findViewById(R.id.edtOnlineDataCounter);
+        mEdtMongoDbDataCounter = findViewById(R.id.edtMongoDbDataCounter);
         mCheckBoxEcgRr.setChecked(true);
         mCheckBoxHrSpo2.setChecked(true);
         mCheckBoxSkin.setChecked(true);
         mCheckBoxTemperatureHumidity.setChecked(true);
 
-        mSwtich.setChecked(false);
+        mSwitchOnlineData.setChecked(false);
         mSwitchSaveData.setChecked(false);
 
 
@@ -121,6 +142,20 @@ public class DataCollectActivity extends AppCompatActivity {
         skinResistance = new SkinResistance();
         oSkinResistance = new SkinResistance();
 
+        mEdtOnlineDataCounter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onlineDataCounter = Math.abs(Integer.parseInt(mEdtOnlineDataCounter.getText().toString()));
+            }
+        });
+        mEdtMongoDbDataCounter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mongoDataCounter = Math.abs(Integer.parseInt(mEdtMongoDbDataCounter.getText().toString()));
+
+            }
+        });
+
         sw = new SmartWatchServer(this);
         plotData();
     }
@@ -145,14 +180,15 @@ public class DataCollectActivity extends AppCompatActivity {
             public void run() {
                 String str = basVar.dataFromNotification;
                 str = str.replace(" ", "");
-                mTextView.setText("byteArray : " + basVar.dataFromNotification);
+                mTextView.setText("byteArray : " + str);
+                Log.d("TEMP", "length "+str.toCharArray().length);
                 //String s = basVar.dataFromNotification.substring(0, 2);
                 //byte b = Byte.valueOf(s, 16);
-                Byte[] array = new Byte[60];
+                Byte[] array = new Byte[450];
                 Arrays.fill(array, (byte) 0);
                 getCharArrayOfData(array, str);
-                Log.d("TEMP", str);
-                fillDataBaseData(array);
+               // fillDataBaseData(array);
+                feedQueryFromBle(array);
                 StringBuilder sb = new StringBuilder();
                 sb.append("HUM: " + nba[HUMIDITY].floatValue() + "\n");
                 sb.append("TEMP: " + nba[TEMPERATURE].floatValue() + "\n");
@@ -161,14 +197,25 @@ public class DataCollectActivity extends AppCompatActivity {
                 sb.append("SPO2: " + nba[SPO2] + "\n");
                 sb.append("IRED: " + nba[IRED] + "\n");
                 sb.append("RED: " + nba[RED] + "\n");
-                sb.append("ECG: " + nba[ECG].intValue() + "\n");
-                sb.append("RR: " + nba[RR].intValue() + "\n");
+                sb.append("RR_COUNTER: " + nba[RR_COUNTER] + "\n");
+                sb.append("RR: " + nba[RR] + "\n");
+                sb.append("BPM_COUNTER: " + nba[BPM_COUNTER] + "\n");
+                sb.append("BPM: " + nba[BPM].intValue() + "\n");
+                sb.append("ECG_COUNTER: " + nba[ECG_COUNTER] + "\n");
+
                 mTextView.setText(sb.toString() + "\n");
                 try {
                     if(mSwitchSaveData.isChecked()){
                         dataBaseSendWSProcess();
+                    }else {
+                        clearQueues();
                     }
-                    dataBaseSendWSProcessOnline();
+                    if(mSwitchOnlineData.isChecked()){
+                        dataBaseSendWSProcessOnline();
+                    }else{
+                        clearQueues();
+                    }
+
                 } catch (Exception ex) {
                     Log.d(TAG, ex.toString());
                 }
@@ -178,6 +225,158 @@ public class DataCollectActivity extends AppCompatActivity {
             }
         };
         mHandler.postDelayed(mTimer1, 501);
+    }
+
+    private void clearQueues() {
+        lbgOnlineMax30102.clear();
+        lbgOnlineMax3003.clear();
+        lbgOnlineSkinResistance.clear();
+        lbgOnlineSi7021.clear();
+
+    }
+
+    private void feedQueryFromBle(Byte[] array) {
+        try {
+            byte[] tempArray = new byte[0];
+            ByteBuffer wrapped;
+            if(mCheckBoxTemperatureHumidity.isChecked() == true){
+                //Get humidity
+                tempArray = new byte[nbs[HUMIDITY].intValue()];
+                Si7021 si7021 = new Si7021();
+                for (int j = 0; j < nbs[HUMIDITY].intValue(); j++) {
+                    tempArray[j] = array[nbo[HUMIDITY].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                si7021.setHumidityByte(si7021.getHumidityByte().append(bytesToHex(tempArray)));
+                nba[HUMIDITY] = wrapped.getFloat();
+                //Get Temperature data
+                tempArray = new byte[ nbs[TEMPERATURE].intValue()];
+                for (int j = 0; j < nbs[TEMPERATURE].intValue(); j++) {
+                    tempArray[j] = array[nbo[TEMPERATURE].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                si7021.setTemperatureByte(si7021.getTemperatureByte().append(bytesToHex(tempArray)));
+                nba[TEMPERATURE] = wrapped.getFloat();
+                si7021.setCounter(si7021.getCounter()+1);
+                lbgOnlineSi7021.put(si7021);
+                Log.d(TAG, "feedQueryFromBle: " + si7021.toString() + " value= " + nba[TEMPERATURE] + " value= " + nba[HUMIDITY]);
+            }
+            if(mCheckBoxSkin.isChecked() == true){
+                //Get GSR data
+                SkinResistance skinResistance = new SkinResistance();
+                tempArray = new byte[nbs[GSR].intValue()];
+                for (int j = 0; j <nbs[GSR].intValue(); j++) {
+                    tempArray[j] = array[nbo[GSR].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(tempArray)));
+                nba[GSR] = wrapped.getShort();
+                skinResistance.setCounter(skinResistance.getCounter()+1);
+                lbgOnlineSkinResistance.put(skinResistance);
+                Log.d(TAG, "feedQueryFromBle: "+ skinResistance.toString() + " value= " + nba[GSR]);
+            }
+
+            if(mCheckBoxHrSpo2.isChecked() == true){
+                //Get Max30102 data
+                Max30102 max30102 = new Max30102();
+                //HR -> max30102
+                tempArray = new byte[nbs[HR].intValue()];
+                for (int j = 0; j <nbs[HR].intValue(); j++) {
+                    tempArray[j] = array[nbo[HR].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                max30102.setHr(max30102.getHr().append(bytesToHex(tempArray)));
+                nba[HR] =  (int) wrapped.get() % 0xFF;
+                //SPO2 -> max30102
+                tempArray = new byte[nbs[SPO2].intValue()];
+                for (int j = 0; j <nbs[SPO2].intValue(); j++) {
+                    tempArray[j] = array[nbo[SPO2].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                max30102.setSpo2(max30102.getSpo2().append(bytesToHex(tempArray)));
+                nba[SPO2] =  (byte) wrapped.get() % 0xFF;
+
+                //IRED -> max30102
+                tempArray = new byte[nbs[IRED].intValue()];
+                for (int j = 0; j <nbs[IRED].intValue(); j++) {
+                    tempArray[j] = array[nbo[IRED].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                max30102.setIred(max30102.getIred().append(bytesToHex(tempArray)));
+                nba[IRED] =  wrapped.getInt();
+
+                //IRED -> max30102
+                tempArray = new byte[nbs[RED].intValue()];
+                for (int j = 0; j <nbs[RED].intValue(); j++) {
+                    tempArray[j] = array[nbo[RED].intValue() + j];
+                }
+                wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
+                max30102.setRed(max30102.getRed().append(bytesToHex(tempArray)));
+                nba[RED] =  wrapped.getInt();
+                max30102.setCounter(max30102.getCounter()+1);
+                Log.d(TAG, "feedQueryFromBle: " + max30102.toString() + " value= " + nba[RED]);
+                lbgOnlineMax30102.put(max30102);
+            }
+
+            if(mCheckBoxEcgRr.isChecked() == true){
+                //Get max30003 data
+                //RR -> Max3003
+                Max3003 max3003 = new Max3003();
+                if(array[nbo[RR_COUNTER].intValue()].intValue()>0){
+                    nba[RR_COUNTER] =  (array[nbo[RR_COUNTER].intValue()]&0xff);//wrapped.getInt();
+                    if(nba[RR_COUNTER].intValue() != 0){
+                        tempArray = new byte[nba[RR_COUNTER].intValue()*4];
+                        for(int j = 0; j< nba[RR_COUNTER].intValue()*4; j++){
+                            tempArray[j] = array[nbo[RR].intValue() + j];
+                        }
+                        max3003.setRr(max3003.getRr().append(bytesToHex(tempArray)));
+                        nba[RR] = array[nbo[RR].intValue()+0]<<24 | array[nbo[RR].intValue()+1]<<16 |
+                                array[nbo[RR].intValue()+2]<<8 | array[nbo[RR].intValue()+3]&0xff;
+                    }
+                }else{
+                    nba[RR_COUNTER] = 0;
+                }
+                //BPM -> Max3003
+                if(array[nbo[BPM_COUNTER].intValue()].intValue()>0){
+                    nba[RR_COUNTER] =  (array[nbo[BPM_COUNTER].intValue()]&0xff);//wrapped.getInt();
+                    if(nba[BPM_COUNTER].intValue() != 0){
+                        tempArray = new byte[nba[BPM_COUNTER].intValue()*4];
+                        for(int j = 0; j< nba[BPM_COUNTER].intValue()*4; j++){
+                            tempArray[j] = array[nbo[BPM].intValue() + j];
+                        }
+                        max3003.setBpm(max3003.getBpm().append(bytesToHex(tempArray)));
+                    }
+                    nba[BPM] = Float.intBitsToFloat(array[nbo[BPM].intValue()+0]<<24 ^ array[nbo[BPM].intValue()+1]<<16 ^
+                            array[nbo[BPM].intValue()+2]<<8 ^ array[nbo[BPM].intValue()+3]&0xff);
+                }else{
+                    nba[BPM_COUNTER] = 0;
+                }
+                
+                if(nbs[ECG_COUNTER].intValue()>0){
+                    //ECG -> Max3003
+                    nba[ECG_COUNTER] =  (array[nbo[ECG_COUNTER].intValue()+1]) << 8 | (array[nbo[ECG_COUNTER].intValue()]&0xff);//wrapped.getInt();
+                    if(nba[ECG_COUNTER].intValue() != 0){
+                        tempArray = new byte[nba[ECG_COUNTER].intValue()*2];
+                        for(int j = 0; j< nba[ECG_COUNTER].intValue()*2; j++){
+                            tempArray[j] = array[nbo[ECG_COUNTER].intValue() + j];
+                        }
+                    }
+                }else{
+                    nba[ECG_COUNTER] = 0;
+                }
+                Log.d(TAG, "feedQueryFromBle: " + max3003.toString() + " cRR = " +
+                        nba[RR_COUNTER] + " cBPM = " + nba[BPM_COUNTER] +" cECG " + nba[ECG_COUNTER]);
+                if(nba[ECG_COUNTER].intValue() != 0 || nba[RR_COUNTER].intValue() != 0 || nba[BPM_COUNTER].intValue() != 0){
+                    max3003.setCounter(max3003.getCounter()+1);
+                    max3003.setEcg(max3003.getEcg().append(bytesToHex(tempArray)));
+                    lbgOnlineMax3003.put(max3003);
+                }
+            }
+
+        }catch (Exception ex){
+            ex.printStackTrace();
+            Log.d(TAG, "feedQueryFromBle: " +ex.getCause());
+        }
     }
 
     private void fillDataBaseData(Byte[] array) {
@@ -190,7 +389,7 @@ public class DataCollectActivity extends AppCompatActivity {
             if (mSwitchSaveData.isChecked()) {
                 dataAppendProcess(i, tempArray);
             }
-            if (mSwtich.isChecked()) {
+            if (mSwitchOnlineData.isChecked()) {
                 dataAppendReal(i, tempArray);
             }
             if (i == HUMIDITY || i == TEMPERATURE) {
@@ -208,7 +407,7 @@ public class DataCollectActivity extends AppCompatActivity {
     }
 
     private void dataAppendReal(int data_type, byte[] array) {
-        if (oSi7021.getCounter() >= 5 && data_type == HUMIDITY)
+        if (oSi7021.getCounter() >= onlineDataCounter && data_type == HUMIDITY)
             return;
         if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
             oSi7021.setType("environment");
@@ -264,7 +463,7 @@ public class DataCollectActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void dataBaseSendWSProcessOnline() {
-        if (oSi7021.getCounter() < 5)
+        if (oSi7021.getCounter() < onlineDataCounter)
             return;
         StringBuilder sb = new StringBuilder();
         sb.append(" \n \n \n Data send to Online \n \n \n \n");
@@ -282,20 +481,46 @@ public class DataCollectActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void dataBaseSendWSProcess() {
-        if (si7021.getCounter() < 300)
+        if (getQueueSize())
             return;
         StringBuilder sb = new StringBuilder();
         sb.append(" \n \n \n Data send to db \n \n \n \n");
         mTextView.setText(sb.toString() + "\n");
-        if(mCheckBoxEcgRr.isChecked() == true)
-            sw.setSensorInfo(max3003, TYPE_DATABASE);
-        if(mCheckBoxHrSpo2.isChecked() == true)
-            sw.setSensorInfo(max30102, TYPE_DATABASE);
-        if(mCheckBoxTemperatureHumidity.isChecked() == true)
-            sw.setSensorInfo(si7021, TYPE_DATABASE);
-        if(mCheckBoxSkin.isChecked() == true)
-            sw.setSensorInfo(skinResistance, TYPE_DATABASE);
+        if(mCheckBoxEcgRr.isChecked() == true){
+            List<Max3003> tmp = new ArrayList<>();
+            lbgOnlineMax3003.drainTo(tmp);
+            tmp.stream().forEach(s -> {sw.setSensorInfo(s,TYPE_DATABASE);});
+            //sw.setSensorInfo(max3003, TYPE_DATABASE);
+        }
+
+        if(mCheckBoxHrSpo2.isChecked() == true){
+            List<Max30102> tmp = new ArrayList<>();
+            lbgOnlineMax30102.drainTo(tmp);
+            tmp.stream().forEach(s -> {sw.setSensorInfo(s,TYPE_DATABASE);});
+            //sw.setSensorInfo(max30102, TYPE_DATABASE);
+        }
+
+        if(mCheckBoxTemperatureHumidity.isChecked() == true){
+            List<Si7021> tmp = new ArrayList<>();
+            lbgOnlineSi7021.drainTo(tmp);
+            tmp.stream().forEach(s -> {sw.setSensorInfo(s,TYPE_DATABASE);});
+            //sw.setSensorInfo(si7021, TYPE_DATABASE);
+        }
+
+        if(mCheckBoxSkin.isChecked() == true){
+            List<SkinResistance> tmp = new ArrayList<>();
+            lbgOnlineSkinResistance.drainTo(tmp);
+            tmp.stream().forEach(s -> {sw.setSensorInfo(s,TYPE_DATABASE);});
+            //sw.setSensorInfo(skinResistance, TYPE_DATABASE);
+        }
         resetCounterAndData(TYPE_DATABASE);
+    }
+
+    private boolean getQueueSize() {
+        if(lbgOnlineMax3003.size()< mongoDataCounter || lbgOnlineMax30102.size()< mongoDataCounter ||
+                lbgOnlineSkinResistance.size()< mongoDataCounter || lbgOnlineSi7021.size()< mongoDataCounter )
+            return true;
+        return false;
     }
 
     private void resetCounterAndData(String type) {
@@ -339,7 +564,7 @@ public class DataCollectActivity extends AppCompatActivity {
     }
 
     private void dataAppendProcess(int data_type, byte[] array) {
-        if (si7021.getCounter() >= 300 && data_type == HUMIDITY)
+        if (si7021.getCounter() >= mongoDataCounter && data_type == HUMIDITY)
             return;
         if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
             si7021.setType("environment");

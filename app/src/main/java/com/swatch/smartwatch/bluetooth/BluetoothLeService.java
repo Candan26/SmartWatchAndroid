@@ -70,7 +70,7 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(intentAction);
                 Log.i(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
-                mBluetoothGatt.requestMtu(517);
+                mBluetoothGatt.requestMtu(512);
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {

@@ -48,4 +48,15 @@ public class Si7021 {
     public void setDate(Date date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "Si7021{" +
+                "counter=" + counter +
+                ", type='" + type + '\'' +
+                ", temperatureByte=" + temperatureByte +
+                ", humidityByte=" + humidityByte +
+                ", date=" + date +
+                '}';
+    }
 }

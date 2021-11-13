@@ -100,6 +100,7 @@ public class SmartWatchServer extends Service {
         params.put("status", max3003.getType());
         params.put("ecg", max3003.getEcg().toString());
         params.put("rr", max3003.getRr().toString());
+        params.put("bpm", max3003.getBpm().toString());
         params.put("personName", personName);
         params.put("personSurname",personSurname);
         params.put("date", simpleDateFormat.format(max3003.getDate()));

@@ -56,20 +56,48 @@
 </LinearLayout>
 
 
-    <Switch
-        android:id="@+id/swOnlineData"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Online Data Stream"
-        android:paddingBottom="5dp"
-        android:layout_marginBottom="5dp"/>
+        android:orientation="horizontal">
 
-    <Switch
-        android:id="@+id/swSaveData"
-        android:layout_width="match_parent"
+        <EditText
+            android:id="@+id/edtOnlineDataCounter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ems="10"
+            android:inputType="number" />
+
+        <Switch
+            android:id="@+id/swOnlineData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:paddingBottom="5dp"
+            android:text="Online Data Stream" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Save Data On MongoDB"
-        android:layout_marginBottom="5dp"/>
+        android:orientation="horizontal">
+        <EditText
+            android:id="@+id/edtMongoDbDataCounter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ems="10"
+            android:inputType="number" />
+
+        <Switch
+            android:id="@+id/swSaveDataOnMongo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:text="Save Data On MongoDB" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/textViewDataCollect"

@@ -7,6 +7,7 @@ public class Max3003 {
     private String type = "";
     private StringBuilder ecg = new StringBuilder();
     private StringBuilder rr = new StringBuilder();
+    private StringBuilder bpm = new StringBuilder();
     private Date date;
 
     public int getCounter() {
@@ -47,5 +48,21 @@ public class Max3003 {
 
     public void setDate(Date date) {
         this.date = date;
+    }
+
+    public StringBuilder getBpm() {  return bpm;  }
+
+    public void setBpm(StringBuilder bpm) {  this.bpm = bpm;    }
+
+    @Override
+    public String toString() {
+        return "Max3003{" +
+                "counter=" + counter +
+                ", type='" + type + '\'' +
+                ", ecg=" + ecg +
+                ", rr=" + rr +
+                ", bpm=" + bpm +
+                ", date=" + date +
+                '}';
     }
 }
