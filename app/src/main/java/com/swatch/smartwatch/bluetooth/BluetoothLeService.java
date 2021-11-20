@@ -161,6 +161,10 @@ public class BluetoothLeService extends Service {
         sendBroadcast(intent);
     }
 
+    public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+       return  mBluetoothGatt.writeCharacteristic(characteristic);
+    }
+
     public class LocalBinder extends Binder {
         public BluetoothLeService getService() {
             return BluetoothLeService.this;

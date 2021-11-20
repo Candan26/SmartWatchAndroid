@@ -96,6 +96,12 @@ public class BaseActivity extends Application {
         mBluetoothLeService.setCharacteristicNotification(dataCharacteristic,status);
     }
 
+    public  boolean sendCharacteristic(String characteristic_uuid, byte[] character){
+        BluetoothGattCharacteristic dataCharacteristic= bleCharHashMap.get(characteristic_uuid);
+        dataCharacteristic.setValue(character);
+        return mBluetoothLeService.writeCharacteristic(dataCharacteristic);
+    }
+
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);

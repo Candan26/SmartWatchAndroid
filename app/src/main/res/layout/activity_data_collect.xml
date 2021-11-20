@@ -19,8 +19,76 @@
         android:src="@drawable/image_data"
         tools:layout_editor_absoluteX="123dp"
         tools:layout_editor_absoluteY="310dp" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbtOledShutDown"
+                android:layout_width="59dp"
+                android:layout_height="63dp"
+                android:minHeight="48dp"
+                android:onClick="onRadioButtonClicked"
+                android:text="Shut Down"
+                android:textSize="8sp" />
+
+            <RadioButton
+                android:id="@+id/rbtOledEcgRr"
+                android:layout_width="wrap_content"
+                android:layout_height="63dp"
+                android:onClick="onRadioButtonClicked"
+                android:layout_marginRight="2dp"
+                android:text="ECG RR"
+                android:textSize="8sp" />
+
+            <RadioButton
+                android:id="@+id/rbHrSpo2"
+                android:layout_width="wrap_content"
+                android:layout_height="63dp"
+                android:minHeight="48dp"
+                android:onClick="onRadioButtonClicked"
+                android:layout_marginRight="2dp"
+                android:text="Hr Spo2"
+                android:textSize="8sp" />
+
+            <RadioButton
+                android:id="@+id/rbtOledGsr"
+                android:layout_width="wrap_content"
+                android:layout_height="63dp"
+                android:minHeight="48dp"
+                android:onClick="onRadioButtonClicked"
+                android:layout_marginRight="2dp"
+                android:text="Skin"
+                android:textSize="8sp" />
+
+            <RadioButton
+                android:id="@+id/rbtOledTempAndHumidity"
+                android:layout_width="85dp"
+                android:layout_height="63dp"
+                android:minHeight="48dp"
+                android:onClick="onRadioButtonClicked"
+                android:layout_marginRight="2dp"
+                android:text="Temp Hum"
+                android:textAlignment="textStart"
+                android:textSize="8sp" />
+
+            <RadioButton
+                android:id="@+id/rbtOledBle"
+                android:layout_width="wrap_content"
+                android:layout_height="63dp"
+                android:onClick="onRadioButtonClicked"
+                android:layout_marginRight="2dp"
+                android:text="BLE"
+                android:textSize="8sp" />
+
+        </RadioGroup>
 
 
+    </LinearLayout>
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
