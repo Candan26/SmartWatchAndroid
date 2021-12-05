@@ -38,7 +38,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class DataCollectActivity extends AppCompatActivity {
 
     private static final int MAX_BYTE_LENGTH = 128;//256
-    private static final String TAG = "DATA COLLECT";
+    private static final String TAG = "DATA_COLLECT";
     private static final String RB_MAX30003 = "MAX30003";
     private static final String RB_MAX30102 = "MAX30102";
     private static final String RB_SI7021 = "Si7021";
@@ -88,7 +88,7 @@ public class DataCollectActivity extends AppCompatActivity {
     private int MAX_COUNTER_VAL_MAX3003= 4096;
     private int MAX_COUNTER_VAL_MAX30102= 1024;
 
-    private static  int MAX_VALUE_OF_X_AXIS =2048 ;
+    private static  int MAX_VALUE_OF_X_AXIS =4096 ;
     private int max30003GraphicCounter =0;
     private int max30102GraphicCounter =0;
     private int Si7021GraphicCounter =0;
@@ -235,6 +235,7 @@ public class DataCollectActivity extends AppCompatActivity {
         mSeriesMax30003ECG.setThickness(2);
         mSeriesMax30003ECG.setDrawDataPoints(false);
         mSeriesMax30003ECG.setDrawBackground(false);
+        mSeriesMax30003ECG.setTitle("ECG Data");
         mSeriesMax30003ECG.setColor(Color.RED);
 
         mSeriesMax30003RR = new LineGraphSeries<>();
@@ -314,17 +315,17 @@ public class DataCollectActivity extends AppCompatActivity {
                 feedQueryFromBle(array);
                 printGraphOfData();
                 StringBuilder sb = new StringBuilder();
-                sb.append("HUM: " + nba[HUMIDITY].floatValue() + "\n");
+                sb.append("HUM: " + nba[HUMIDITY].floatValue() + " ");
                 sb.append("TEMP: " + nba[TEMPERATURE].floatValue() + "\n");
                 sb.append("GSR: " + nba[GSR].shortValue() + "\n");
-                sb.append("HR: " + nba[HR] + "\n");
-                sb.append("SPO2: " + nba[SPO2] + "\n");
-                sb.append("IRED: " + nba[IRED] + "\n");
+                sb.append("HR: " + nba[HR] + " ");
+                sb.append("SPO2: " + nba[SPO2] + " ");
+                sb.append("IRED: " + nba[IRED] + " ");
                 sb.append("RED: " + nba[RED] + "\n");
-                sb.append("RR_COUNTER: " + nba[RR_COUNTER] + "\n");
-                sb.append("RR: " + nba[RR] + "\n");
-                sb.append("BPM_COUNTER: " + nba[BPM_COUNTER] + "\n");
-                sb.append("BPM: " + nba[BPM].intValue() + "\n");
+                sb.append("RR_COUNTER: " + nba[RR_COUNTER] + " ");
+                sb.append("RR: " + nba[RR] + " ");
+                sb.append("BPM_COUNTER: " + nba[BPM_COUNTER] + " ");
+                sb.append("BPM: " + nba[BPM].intValue() + " ");
                 sb.append("ECG_COUNTER: " + nba[ECG_COUNTER] + "\n");
 
                 try {
@@ -366,6 +367,12 @@ public class DataCollectActivity extends AppCompatActivity {
             double rrData = 0;
             List<Max3003> tmp = new ArrayList<>();
             lbqMax3003.drainTo(tmp);
+          /*
+            if(tmp.size()==0){
+                resetDataOnSeries(mSeriesMax30003ECG, ecgData, max30003GraphicCounter);
+            }
+
+           */
             for( Max3003 m : tmp){
                 List<Short> ecgList = m.getEcgList();
                 for(Short s: ecgList){
@@ -423,9 +430,9 @@ public class DataCollectActivity extends AppCompatActivity {
         max30102GraphicCounter++;
         if(max30102GraphicCounter >= MAX_COUNTER_VAL_MAX30102-1){
             max30102GraphicCounter =0;
-            resetDataOnSeries(mSeriesMax30102R, mSeriesMax30102IR, r, ir, max30102GraphicCounter);
+            resetDataOnSeries(mSeriesMax30102R, r, max30102GraphicCounter);
         }
-        appendDataOnSeries(mSeriesMax30102R, mSeriesMax30102IR, r, ir, max30102GraphicCounter);
+        appendDataOnSeries(mSeriesMax30102R, r, max30102GraphicCounter);
     }
 
     private void printMax30003Data(double ecgData, double rrData) {
@@ -614,14 +621,22 @@ public class DataCollectActivity extends AppCompatActivity {
                     int shortCounter = 0;
                     if(nba[ECG_COUNTER].intValue() != 0){
                         tempArray = new byte[nba[ECG_COUNTER].intValue()*2];
-                        byte[] tempEcgArray = new byte[2];
+                        byte[] tempEcgArray = new byte[]{0,0};
                         for(int j = 0; j< nba[ECG_COUNTER].intValue()*2; j++){
                             shortCounter++;
                             tempArray[j] = array[nbo[ECG_COUNTER].intValue() + j];
                             tempEcgArray[j%2] = array[nbo[ECG_COUNTER].intValue() + j];
                             if(shortCounter % 2 ==0){
+                                if(j == 1){
+                                    // the first byte must be swiped
+                                    byte tb = tempEcgArray[0];
+                                    tempEcgArray[0]=tempEcgArray[1];
+                                    tempEcgArray[1]= tb;
+                                    //Log.d("ECG", "array  : "  + Arrays.toString(array));
+                                }
                                 shortCounter = 0;
-                               max3003.appendValueOnEcgList(ByteBuffer.wrap(tempEcgArray).getShort());
+                                Short s = ByteBuffer.wrap(tempEcgArray).getShort();
+                                max3003.appendValueOnEcgList(s);
                             }
                         }
                     }
@@ -755,7 +770,7 @@ public class DataCollectActivity extends AppCompatActivity {
             case R.id.rbHrSpo2:
                 if (checked){
                     activeRadioButton = RB_MAX30102;
-                    swbGraph.addSeries(mSeriesMax30102IR);
+                    //swbGraph.addSeries(mSeriesMax30102IR);
                     swbGraph.addSeries(mSeriesMax30102R);
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30102);
