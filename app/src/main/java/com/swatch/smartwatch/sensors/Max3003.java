@@ -1,6 +1,8 @@
 package com.swatch.smartwatch.sensors;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class Max3003 {
     private int counter=0;
@@ -8,7 +10,14 @@ public class Max3003 {
     private StringBuilder ecg = new StringBuilder();
     private StringBuilder rr = new StringBuilder();
     private StringBuilder bpm = new StringBuilder();
+    private List<Short> ecgList = new ArrayList<>();
     private Date date;
+
+    public List<Short> getEcgList() { return ecgList; }
+
+    public void appendValueOnEcgList(short s){ ecgList.add(s);}
+
+    public void clearEcgList(){ecgList.clear();}
 
     public int getCounter() {
         return counter;

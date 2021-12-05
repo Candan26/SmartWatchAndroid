@@ -8,6 +8,16 @@ public class Si7021 {
     private StringBuilder temperatureByte = new StringBuilder();
     private StringBuilder humidityByte = new StringBuilder();
     private Date date;
+    private Float temperature = new Float(0);
+    private Float Humidity = new Float(0);
+
+    public Float getTemperature() { return temperature;  }
+
+    public void setTemperature(Float temperature) { this.temperature = temperature; }
+
+    public Float getHumidity() { return Humidity; }
+
+    public void setHumidity(Float humidity) {  Humidity = humidity; }
 
     public int getCounter() {
         return counter;

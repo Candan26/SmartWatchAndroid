@@ -119,7 +119,6 @@ public class EkgActivity extends AppCompatActivity {
             });
         }
         mSeries.appendData(new DataPoint(ekgGraphicCounter,f.floatValue()),true,MAX_VALUE_OF_X_AXIS);
-
     }
 
     private  void  adjustGraphicsProperties(GraphView v){

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,6 +18,9 @@ import android.widget.RadioButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 import com.swatch.smartwatch.fragment.EmailFragment;
 import com.swatch.smartwatch.sensors.Max3003;
 import com.swatch.smartwatch.sensors.Max30102;
@@ -35,9 +39,22 @@ public class DataCollectActivity extends AppCompatActivity {
 
     private static final int MAX_BYTE_LENGTH = 128;//256
     private static final String TAG = "DATA COLLECT";
+    private static final String RB_MAX30003 = "MAX30003";
+    private static final String RB_MAX30102 = "MAX30102";
+    private static final String RB_SI7021 = "Si7021";
+    private static final String RB_SR = "SkinResistance";
+    private static final String RB_CLOSE = "ShotDownOled";
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
     private final String DATA_COLLECT_CHARACTERISTIC_UUID = "24538aee-dd71-11e9-98a9-2a2ae2dbcce4";
+    public final String TYPE_DATABASE = "database";
+    public final String TYPE_ONLINE = "online";
+    private String activeRadioButton = RB_CLOSE;
+    private String lastActiveButton = RB_CLOSE;
+
     private TextView mTextView;
+
     private ImageView mImageView;
+
     private BaseActivity basVar;
     private Switch mSwitchOnlineData;
     private Switch mSwitchSaveData;
@@ -48,7 +65,7 @@ public class DataCollectActivity extends AppCompatActivity {
 
     private EditText mEdtOnlineDataCounter;
     private EditText mEdtMongoDbDataCounter;
-
+    private GraphView swbGraph;
     private Runnable mTimer1;
     private final Handler mHandler = new Handler();
 
@@ -65,64 +82,94 @@ public class DataCollectActivity extends AppCompatActivity {
     public static final int BPM = 10;
     public static final int ECG_COUNTER = 11;
     public static final int ECG = 12;
+    private int MAX_VALUE_EKG = 0xFFFF;
+    private int MAX_COUNTER_VAL_SR= 1024;
+    private int MAX_COUNTER_VAL_SI7021= 512;
+    private int MAX_COUNTER_VAL_MAX3003= 4096;
+    private int MAX_COUNTER_VAL_MAX30102= 1024;
+
+    private static  int MAX_VALUE_OF_X_AXIS =2048 ;
+    private int max30003GraphicCounter =0;
+    private int max30102GraphicCounter =0;
+    private int Si7021GraphicCounter =0;
+    private int skinResistanceGraphicCounter =0;
+    private int onlineDataCounter = 1;
+    private int mongoDataCounter = 100;
 
     public static  final byte[]  OLED_STATUS_SHUT_DOWN = new byte[] {6};
     public static  final byte[]  OLED_STATUS_SI7021 = new byte[] {1};
     public static  final byte[]  OLED_STATUS_GSR = new byte[] {2};
     public static  final byte[]  OLED_STATUS_MAX30102 = new byte[] {3};
     public static  final byte[]  OLED_STATUS_MAX30003 = new byte[] {4};
-    public static  final byte[] OLED_STATUS_BLE = new byte[] {5};
+    public static  final byte[]  OLED_STATUS_BLE = new byte[] {5};
 
     public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, IRED, RED,  RR_COUNTER, RR, BPM_COUNTER, BPM, ECG_COUNTER, ECG};
     public static Number[] nbs = {4,        4,           2,   1,  1,    4,    4,    1,          20, 1,           20,  2,           320};//size of each data
     public static Number[] nbo = {0,        4,           8,   10, 11,   12,   16,   20,         21, 41,          42,  62,          64};//location of obj
 
-    public final String TYPE_DATABASE = "database";
-    public final String TYPE_ONLINE = "online";
-    Max3003 max3003, oMax3003;
-    Max30102 max30102, oMax30102;
-    Si7021 si7021, oSi7021;
-    SkinResistance skinResistance, oSkinResistance;
-
-    public LinkedBlockingQueue<Max3003> lbgOnlineMax3003 = new LinkedBlockingQueue<>();
-    public LinkedBlockingQueue<Max30102> lbgOnlineMax30102 = new LinkedBlockingQueue<>();
-    public LinkedBlockingQueue<Si7021> lbgOnlineSi7021 = new LinkedBlockingQueue<>();
-    public LinkedBlockingQueue<SkinResistance> lbgOnlineSkinResistance = new LinkedBlockingQueue<>();
-
-
-
+    public LinkedBlockingQueue<Max3003> lbqOnlineMax3003 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Max3003> lbqMax3003 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Max30102> lbqOnlineMax30102 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Max30102> lbqMax30102 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Si7021> lbqOnlineSi7021 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<Si7021> lbqSi7021 = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<SkinResistance> lbqOnlineSkinResistance = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<SkinResistance> lbqSkinResistance = new LinkedBlockingQueue<>();
     private SmartWatchServer sw;
 
-    int dbCounter = 0;
-    int onlineDataCounter = 1;
-    int mongoDataCounter = 100;
+    private LineGraphSeries<DataPoint> mSeriesMax30003ECG;
+    private LineGraphSeries<DataPoint> mSeriesMax30003RR;
+    private LineGraphSeries<DataPoint> mSeriesMax30102IR;
+    private LineGraphSeries<DataPoint> mSeriesMax30102R;
+    private LineGraphSeries<DataPoint> mSeriesSkin;
+    private LineGraphSeries<DataPoint> mSeriesTemperature;
+    private LineGraphSeries<DataPoint> mSeriesHumidity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_data_collect);
+        initViewWidgets();
+        setCheckBoxDefaultPosition();
+        setSwitchDefaultPosition();
+        //setImageViewForEmailSending();
+        setBleDefaultParams();
+        setOnlineDataMongoDbDataSendCounterAndObj();
+        initWebServer();
+        adjustGraphicsProperties(swbGraph);
+        plotData();
+    }
 
-        mTextView = findViewById(R.id.textViewDataCollect);
-        mImageView = findViewById(R.id.imageViewDataCollect);
-
-        mSwitchOnlineData = (Switch) findViewById(R.id.swOnlineData);
-        mSwitchSaveData = (Switch) findViewById(R.id.swSaveDataOnMongo);
-
-        mCheckBoxEcgRr = (CheckBox) findViewById(R.id.cbEcgRR);
-        mCheckBoxHrSpo2 = (CheckBox)findViewById(R.id.cbHrSpo2);
-        mCheckBoxSkin = (CheckBox)findViewById(R.id.cbSkin);
-        mCheckBoxTemperatureHumidity = (CheckBox)findViewById(R.id.cbTempHumid);
-        mEdtOnlineDataCounter =findViewById(R.id.edtOnlineDataCounter);
-        mEdtMongoDbDataCounter = findViewById(R.id.edtMongoDbDataCounter);
-        mCheckBoxEcgRr.setChecked(true);
-        mCheckBoxHrSpo2.setChecked(true);
-        mCheckBoxSkin.setChecked(true);
-        mCheckBoxTemperatureHumidity.setChecked(true);
-
-        mSwitchOnlineData.setChecked(false);
-        mSwitchSaveData.setChecked(false);
+    private void initWebServer() {
+        sw = new SmartWatchServer(this);
+    }
 
 
+    private void setOnlineDataMongoDbDataSendCounterAndObj() {
+        mEdtOnlineDataCounter.setText(Integer.toString(onlineDataCounter) );
+        mEdtOnlineDataCounter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onlineDataCounter = Math.abs(Integer.parseInt(mEdtOnlineDataCounter.getText().toString()));
+            }
+        });
+        mEdtMongoDbDataCounter.setText(Integer.toString(mongoDataCounter));
+        mEdtMongoDbDataCounter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mongoDataCounter = Math.abs(Integer.parseInt(mEdtMongoDbDataCounter.getText().toString()));
+
+            }
+        });
+    }
+
+    private void setBleDefaultParams() {
+        basVar = (BaseActivity) getApplicationContext();
+        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID, true);
+        basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_BLE);
+    }
+
+    private void setImageViewForEmailSending() {
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -134,37 +181,106 @@ public class DataCollectActivity extends AppCompatActivity {
                 fragmentTransaction.commit();
             }
         });
-        basVar = (BaseActivity) getApplicationContext();
-        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID, true);
-        basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_BLE);
-        max3003 = new Max3003();
-        oMax3003 = new Max3003();
+    }
 
-        max30102 = new Max30102();
-        oMax30102 = new Max30102();
+    private void setSwitchDefaultPosition() {
+        mSwitchOnlineData.setChecked(false);
+        mSwitchSaveData.setChecked(false);
+    }
 
-        si7021 = new Si7021();
-        oSi7021 = new Si7021();
+    private void setCheckBoxDefaultPosition() {
+        mCheckBoxEcgRr.setChecked(true);
+        mCheckBoxHrSpo2.setChecked(true);
+        mCheckBoxSkin.setChecked(true);
+        mCheckBoxTemperatureHumidity.setChecked(true);
+    }
 
-        skinResistance = new SkinResistance();
-        oSkinResistance = new SkinResistance();
+    private void initViewWidgets() {
+        mTextView = findViewById(R.id.textViewDataCollect);
+        mImageView = findViewById(R.id.imageViewDataCollect);
 
-        mEdtOnlineDataCounter.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onlineDataCounter = Math.abs(Integer.parseInt(mEdtOnlineDataCounter.getText().toString()));
-            }
-        });
-        mEdtMongoDbDataCounter.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mongoDataCounter = Math.abs(Integer.parseInt(mEdtMongoDbDataCounter.getText().toString()));
+        mSwitchOnlineData = findViewById(R.id.swOnlineData);
+        mSwitchSaveData = findViewById(R.id.swSaveDataOnMongo);
 
-            }
-        });
+        mCheckBoxEcgRr = findViewById(R.id.cbEcgRR);
+        mCheckBoxHrSpo2 = findViewById(R.id.cbHrSpo2);
+        mCheckBoxSkin = findViewById(R.id.cbSkin);
+        mCheckBoxTemperatureHumidity = findViewById(R.id.cbTempHumid);
 
-        sw = new SmartWatchServer(this);
-        plotData();
+        mEdtOnlineDataCounter =findViewById(R.id.edtOnlineDataCounter);
+        mEdtMongoDbDataCounter = findViewById(R.id.edtMongoDbDataCounter);
+
+        swbGraph = findViewById(R.id.swbGraphViewId);
+    }
+
+    private void adjustGraphicsProperties(GraphView swbGraph) {
+        setDefaultCanvasForGraph(swbGraph);
+        initDataGraphSeries();
+        //swbGraph.addSeries(mSeries);
+    }
+
+    private void setDefaultCanvasForGraph(GraphView swbGraph) {
+        swbGraph.getViewport().setScrollable(true);
+        swbGraph.getViewport().setScalable(true);
+        swbGraph.getViewport().setMinX(0);
+        swbGraph.getViewport().setMaxX(MAX_VALUE_OF_X_AXIS);
+        swbGraph.getViewport().setXAxisBoundsManual(true);
+        swbGraph.getViewport().setDrawBorder(true);
+    }
+
+    private void initDataGraphSeries() {
+        // Define Max30003 graph
+        mSeriesMax30003ECG = new LineGraphSeries<>();
+        mSeriesMax30003ECG.setAnimated(true);
+        mSeriesMax30003ECG.setThickness(2);
+        mSeriesMax30003ECG.setDrawDataPoints(false);
+        mSeriesMax30003ECG.setDrawBackground(false);
+        mSeriesMax30003ECG.setColor(Color.RED);
+
+        mSeriesMax30003RR = new LineGraphSeries<>();
+        mSeriesMax30003RR.setAnimated(true);
+        mSeriesMax30003RR.setThickness(2);
+        mSeriesMax30003RR.setDrawDataPoints(false);
+        mSeriesMax30003RR.setDrawBackground(false);
+        mSeriesMax30003RR.setColor(Color.GREEN);
+
+        // Define Max30102 graph
+        mSeriesMax30102IR = new LineGraphSeries<>();
+        mSeriesMax30102IR.setAnimated(true);
+        mSeriesMax30102IR.setThickness(2);
+        mSeriesMax30102IR.setDrawDataPoints(false);
+        mSeriesMax30102IR.setDrawBackground(false);
+        mSeriesMax30102IR.setColor(Color.BLUE);
+
+        mSeriesMax30102R = new LineGraphSeries<>();
+        mSeriesMax30102R.setAnimated(true);
+        mSeriesMax30102R.setThickness(2);
+        mSeriesMax30102R.setDrawDataPoints(false);
+        mSeriesMax30102R.setDrawBackground(false);
+        mSeriesMax30102R.setColor(Color.MAGENTA);
+
+        //Define Si7021
+        mSeriesHumidity = new LineGraphSeries<>();
+        mSeriesHumidity.setAnimated(true);
+        mSeriesHumidity.setThickness(2);
+        mSeriesHumidity.setDrawDataPoints(false);
+        mSeriesHumidity.setDrawBackground(false);
+        mSeriesHumidity.setColor(Color.BLUE);
+
+        mSeriesTemperature = new LineGraphSeries<>();
+        mSeriesTemperature.setAnimated(true);
+        mSeriesTemperature.setThickness(2);
+        mSeriesTemperature.setDrawDataPoints(false);
+        mSeriesTemperature.setDrawBackground(false);
+        mSeriesTemperature.setColor(Color.RED);
+
+        //Define Skin Resistance
+        mSeriesSkin = new LineGraphSeries<>();
+        mSeriesSkin.setAnimated(true);
+        mSeriesSkin.setThickness(2);
+        mSeriesSkin.setDrawDataPoints(false);
+        mSeriesSkin.setDrawBackground(false);
+        mSeriesSkin.setColor(Color.CYAN);
     }
 
     private void getCharArrayOfData(Byte array[], String hex) {
@@ -196,6 +312,7 @@ public class DataCollectActivity extends AppCompatActivity {
                 getCharArrayOfData(array, str);
                // fillDataBaseData(array);
                 feedQueryFromBle(array);
+                printGraphOfData();
                 StringBuilder sb = new StringBuilder();
                 sb.append("HUM: " + nba[HUMIDITY].floatValue() + "\n");
                 sb.append("TEMP: " + nba[TEMPERATURE].floatValue() + "\n");
@@ -226,20 +343,138 @@ public class DataCollectActivity extends AppCompatActivity {
                 }
 
                 mTextView.setText(sb.toString() + "\n");
-                dbCounter++;
-                mHandler.postDelayed(this, 125);
+                mHandler.postDelayed(this, 105);
 
             }
         };
-        mHandler.postDelayed(mTimer1, 501);
+        mHandler.postDelayed(mTimer1, 300);
+    }
+
+    private void printGraphOfData() {
+        clearQueues(activeRadioButton);// clears non active button queues
+        if(activeRadioButton.equals(RB_SR)){
+            double skinResistance = 0;
+            List<SkinResistance> tmp = new ArrayList<>();
+            lbqSkinResistance.drainTo(tmp);
+           for(SkinResistance s : tmp){
+               skinResistance = s.getSr();
+               printSkinResistanceData(skinResistance);
+           }
+        }
+        if(activeRadioButton.equals(RB_MAX30003)){
+            double ecgData = 0;
+            double rrData = 0;
+            List<Max3003> tmp = new ArrayList<>();
+            lbqMax3003.drainTo(tmp);
+            for( Max3003 m : tmp){
+                List<Short> ecgList = m.getEcgList();
+                for(Short s: ecgList){
+                    rrData = 0;
+                    ecgData = s;
+                    printMax30003Data(ecgData, rrData);
+                }
+                m.clearEcgList();
+            }
+        }
+        if(activeRadioButton.equals(RB_MAX30102)){
+            double r = 0;
+            double ir = 0;
+            List<Max30102> tmp = new ArrayList<>();
+            lbqMax30102.drainTo(tmp);
+            for (Max30102 m : tmp){
+                r = m.getRedVal();
+                ir = m.getIredVal();
+                printMax30102Data(r, ir);
+            }
+        }
+        if(activeRadioButton.equals(RB_SI7021)){
+            double temperature = 0;
+            double humidity = 0;
+            List<Si7021> tmp = new ArrayList<>();
+            lbqSi7021.drainTo(tmp);
+            for(Si7021 s : tmp){
+                temperature = s.getTemperature();
+                humidity = s.getHumidity();
+                printSi7021Data(temperature,humidity);
+            }
+
+        }
+    }
+
+    private void printSkinResistanceData(double skinResistance) {
+        skinResistanceGraphicCounter++;
+        if(skinResistanceGraphicCounter >= MAX_COUNTER_VAL_SR-1){
+            skinResistanceGraphicCounter =0;
+            resetDataOnSeries(mSeriesSkin, skinResistance, skinResistanceGraphicCounter);
+        }
+        appendDataOnSeries(mSeriesSkin, skinResistance, skinResistanceGraphicCounter);
+    }
+
+    private void printSi7021Data(double temperature, double humidity) {
+        Si7021GraphicCounter++;
+        if(Si7021GraphicCounter >= MAX_COUNTER_VAL_SI7021-1){
+            Si7021GraphicCounter =0;
+            resetDataOnSeries(mSeriesTemperature, mSeriesHumidity, temperature, humidity, Si7021GraphicCounter);
+        }
+        appendDataOnSeries(mSeriesTemperature, mSeriesHumidity, temperature, humidity, Si7021GraphicCounter);
+    }
+
+    private void printMax30102Data(double r, double ir) {
+        max30102GraphicCounter++;
+        if(max30102GraphicCounter >= MAX_COUNTER_VAL_MAX30102-1){
+            max30102GraphicCounter =0;
+            resetDataOnSeries(mSeriesMax30102R, mSeriesMax30102IR, r, ir, max30102GraphicCounter);
+        }
+        appendDataOnSeries(mSeriesMax30102R, mSeriesMax30102IR, r, ir, max30102GraphicCounter);
+    }
+
+    private void printMax30003Data(double ecgData, double rrData) {
+        max30003GraphicCounter++;
+        if(max30003GraphicCounter >= MAX_COUNTER_VAL_MAX3003-1){
+            max30003GraphicCounter =0;
+            resetDataOnSeries(mSeriesMax30003ECG, ecgData, max30003GraphicCounter);
+        }
+        appendDataOnSeries(mSeriesMax30003ECG,  ecgData,  max30003GraphicCounter);
+    }
+
+    private void resetDataOnSeries( LineGraphSeries<DataPoint> dp1,  LineGraphSeries<DataPoint> dp2 , double d1, double d2, int counter){
+        dp1.resetData(new DataPoint[] { new DataPoint(counter, d1) });
+        dp2.resetData(new DataPoint[] { new DataPoint(counter, d2) });
+    }
+
+    private void resetDataOnSeries( LineGraphSeries<DataPoint> dp1,  double d1, int counter){
+        dp1.resetData(new DataPoint[] { new DataPoint(counter, d1) });
+    }
+
+    private void appendDataOnSeries( LineGraphSeries<DataPoint> dp1,  LineGraphSeries<DataPoint> dp2 , double d1, double d2, int counter){
+        dp1.appendData(new DataPoint(counter, d1),true,MAX_VALUE_OF_X_AXIS);
+        dp2.appendData(new DataPoint(counter, d2),true,MAX_VALUE_OF_X_AXIS);
+    }
+
+    private void appendDataOnSeries( LineGraphSeries<DataPoint> dp1, double d1, int counter){
+        dp1.appendData(new DataPoint(counter, d1),true,MAX_VALUE_OF_X_AXIS);
+    }
+
+    private void clearQueues(String rbStatus){
+        if(!rbStatus.equals(RB_SI7021) ||  rbStatus.equals(RB_CLOSE)){
+             lbqSi7021.clear();
+        }
+        if(!rbStatus.equals(RB_SR) ||  rbStatus.equals(RB_CLOSE)){
+            lbqSkinResistance.clear();
+        }
+        if(!rbStatus.equals(RB_MAX30003) ||  rbStatus.equals(RB_CLOSE)){
+            lbqMax3003.clear();
+        }
+        if(!rbStatus.equals(RB_MAX30102) ||  rbStatus.equals(RB_CLOSE)){
+            lbqMax30102.clear();
+        }
     }
 
     private void clearQueues() {
-        lbgOnlineMax30102.clear();
-        lbgOnlineMax3003.clear();
-        lbgOnlineSkinResistance.clear();
-        lbgOnlineSi7021.clear();
-
+        lbqOnlineMax30102.clear();
+        lbqOnlineMax3003.clear();
+        lbqOnlineSkinResistance.clear();
+        lbqOnlineSi7021.clear();
     }
 
     private void feedQueryFromBle(Byte[] array) {
@@ -257,6 +492,7 @@ public class DataCollectActivity extends AppCompatActivity {
                 si7021.setHumidityByte(si7021.getHumidityByte().append(bytesToHex(tempArray)));
                 si7021.setType("environment");
                 nba[HUMIDITY] = wrapped.getFloat();
+                si7021.setHumidity( nba[HUMIDITY] .floatValue());
                 //Get Temperature data
                 tempArray = new byte[ nbs[TEMPERATURE].intValue()];
                 for (int j = 0; j < nbs[TEMPERATURE].intValue(); j++) {
@@ -265,9 +501,11 @@ public class DataCollectActivity extends AppCompatActivity {
                 wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
                 si7021.setTemperatureByte(si7021.getTemperatureByte().append(bytesToHex(tempArray)));
                 nba[TEMPERATURE] = wrapped.getFloat();
+                si7021.setTemperature( nba[TEMPERATURE] .floatValue());
                 si7021.setCounter(si7021.getCounter()+1);
                 si7021.setDate(new Date());
-                lbgOnlineSi7021.put(si7021);
+                lbqOnlineSi7021.put(si7021);
+                lbqSi7021.put(si7021);
                 Log.d(TAG, "feedQueryFromBle: " + si7021.toString() + " value= " + nba[TEMPERATURE] + " value= " + nba[HUMIDITY]);
             }
             if(mCheckBoxSkin.isChecked() == true){
@@ -281,9 +519,11 @@ public class DataCollectActivity extends AppCompatActivity {
                 wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
                 skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(tempArray)));
                 nba[GSR] = wrapped.getShort();
+                skinResistance.setSr(nba[GSR].shortValue());
                 skinResistance.setCounter(skinResistance.getCounter()+1);
                 skinResistance.setDate(new Date());
-                lbgOnlineSkinResistance.put(skinResistance);
+                lbqOnlineSkinResistance.put(skinResistance);
+                lbqSkinResistance.put(skinResistance);
                 Log.d(TAG, "feedQueryFromBle: "+ skinResistance.toString() + " value= " + nba[GSR]);
             }
 
@@ -316,7 +556,7 @@ public class DataCollectActivity extends AppCompatActivity {
                 wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
                 max30102.setIred(max30102.getIred().append(bytesToHex(tempArray)));
                 nba[IRED] =  wrapped.getInt();
-
+                max30102.setIredVal(nba[IRED].intValue());
                 //IRED -> max30102
                 tempArray = new byte[nbs[RED].intValue()];
                 for (int j = 0; j <nbs[RED].intValue(); j++) {
@@ -325,10 +565,12 @@ public class DataCollectActivity extends AppCompatActivity {
                 wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
                 max30102.setRed(max30102.getRed().append(bytesToHex(tempArray)));
                 nba[RED] =  wrapped.getInt();
+                max30102.setRedVal(nba[RED].intValue());
                 max30102.setCounter(max30102.getCounter()+1);
                 Log.d(TAG, "feedQueryFromBle: " + max30102.toString() + " value= " + nba[RED]);
                 max30102.setDate(new Date());
-                lbgOnlineMax30102.put(max30102);
+                lbqOnlineMax30102.put(max30102);
+                lbqMax30102.put(max30102);
             }
 
             if(mCheckBoxEcgRr.isChecked() == true){
@@ -369,10 +611,18 @@ public class DataCollectActivity extends AppCompatActivity {
                 if(nbs[ECG_COUNTER].intValue()>0){
                     //ECG -> Max3003
                     nba[ECG_COUNTER] =  (array[nbo[ECG_COUNTER].intValue()+1]) << 8 | (array[nbo[ECG_COUNTER].intValue()]&0xff);//wrapped.getInt();
+                    int shortCounter = 0;
                     if(nba[ECG_COUNTER].intValue() != 0){
                         tempArray = new byte[nba[ECG_COUNTER].intValue()*2];
+                        byte[] tempEcgArray = new byte[2];
                         for(int j = 0; j< nba[ECG_COUNTER].intValue()*2; j++){
+                            shortCounter++;
                             tempArray[j] = array[nbo[ECG_COUNTER].intValue() + j];
+                            tempEcgArray[j%2] = array[nbo[ECG_COUNTER].intValue() + j];
+                            if(shortCounter % 2 ==0){
+                                shortCounter = 0;
+                               max3003.appendValueOnEcgList(ByteBuffer.wrap(tempEcgArray).getShort());
+                            }
                         }
                     }
                 }else{
@@ -384,7 +634,8 @@ public class DataCollectActivity extends AppCompatActivity {
                     max3003.setCounter(max3003.getCounter()+1);
                     max3003.setEcg(max3003.getEcg().append(bytesToHex(tempArray)));
                     max3003.setDate(new Date());
-                    lbgOnlineMax3003.put(max3003);
+                    lbqOnlineMax3003.put(max3003);
+                    lbqMax3003.put(max3003);
                 }
             }
 
@@ -393,78 +644,6 @@ public class DataCollectActivity extends AppCompatActivity {
             Log.d(TAG, "feedQueryFromBle: " +ex.getCause());
         }
     }
-
-    private void fillDataBaseData(Byte[] array) {
-        for (int i = 0; i < nbs.length; i++) {
-            byte[] tempArray = new byte[nbs[i].intValue()];
-            for (int j = 0; j < nbs[i].intValue(); j++) {
-                tempArray[j] = array[(nbo[i].intValue()) + j];
-            }
-            ByteBuffer wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
-            if (mSwitchSaveData.isChecked()) {
-                dataAppendProcess(i, tempArray);
-            }
-            if (mSwitchOnlineData.isChecked()) {
-                dataAppendReal(i, tempArray);
-            }
-            if (i == HUMIDITY || i == TEMPERATURE) {
-                nba[i] = wrapped.getFloat();
-            } else if (nbs[i].intValue() == 2) {
-                nba[i] = wrapped.getShort();
-            } else if (nbs[i].intValue() == 1) {
-                nba[i] = (int) wrapped.get() % 0xFF;
-            } else if(nbs[i].intValue() == 4)  {
-                nba[i] = wrapped.getInt();
-            }else{
-                nba[i] = wrapped.get(0);
-            }
-        }
-    }
-
-    private void dataAppendReal(int data_type, byte[] array) {
-        if (oSi7021.getCounter() >= onlineDataCounter && data_type == HUMIDITY)
-            return;
-        if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
-            oSi7021.setType("environment");
-            oSi7021.setCounter(oSi7021.getCounter() + 1);
-            oSi7021.setHumidityByte(oSi7021.getHumidityByte().append(bytesToHex(array)));
-            oSi7021.setDate(new Date());
-        } else if (data_type == TEMPERATURE) {
-            oSi7021.setTemperatureByte(oSi7021.getTemperatureByte().append(bytesToHex(array)));
-            oSi7021.setDate(new Date());
-        } else if (data_type == GSR) {
-            oSkinResistance.setType("skin");
-            oSkinResistance.setCounter(oSkinResistance.getCounter() + 1);
-            oSkinResistance.setSkinResistance(oSkinResistance.getSkinResistance().append(bytesToHex(array)));
-            oSkinResistance.setDate(new Date());
-        } else if (data_type == HR) { // HR and SPO2 are gathered from same  sensor
-            oMax30102.setType("heart");
-            oMax30102.setCounter(oMax30102.getCounter() + 1);
-            oMax30102.setHr(oMax30102.getHr().append(bytesToHex(array)));
-            oMax30102.setDate(new Date());
-        } else if (data_type == SPO2) {
-            oMax30102.setSpo2(oMax30102.getSpo2().append(bytesToHex(array)));
-            oMax30102.setDate(new Date());
-        }
-        else if(data_type == IRED){
-            oMax30102.setIred(oMax30102.getIred().append(bytesToHex(array)));
-        }
-        else if(data_type == RED){
-            oMax30102.setRed(oMax30102.getRed().append(bytesToHex(array)));
-        } else if (data_type == RR) {
-            oMax3003.setRr(oMax3003.getRr().append(bytesToHex(array)));
-            oMax3003.setDate(new Date());
-        } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
-            oMax3003.setType("heart");
-            oMax3003.setCounter(oMax3003.getCounter() + 1);
-            oMax3003.setEcg(oMax3003.getEcg().append(bytesToHex(array)));
-            oMax3003.setDate(new Date());
-        }
-    }
-
-
-    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-
 
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
@@ -488,7 +667,7 @@ public class DataCollectActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     private void webServiceProcess( StringBuilder sb,String type) {
-        if (getQueueSize(type))
+        if (!isQueueReadyToSend(type))
             return;
         if(type.equals(TYPE_DATABASE))
             sb.append(" \n \n \n Data send to db \n \n \n \n");
@@ -497,125 +676,44 @@ public class DataCollectActivity extends AppCompatActivity {
 
         if(mCheckBoxEcgRr.isChecked() == true){
             List<Max3003> tmp = new ArrayList<>();
-            lbgOnlineMax3003.drainTo(tmp);
+            lbqOnlineMax3003.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(max3003, TYPE_DATABASE);
         }
 
         if(mCheckBoxHrSpo2.isChecked() == true){
             List<Max30102> tmp = new ArrayList<>();
-            lbgOnlineMax30102.drainTo(tmp);
+            lbqOnlineMax30102.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(max30102, TYPE_DATABASE);
         }
 
         if(mCheckBoxTemperatureHumidity.isChecked() == true){
             List<Si7021> tmp = new ArrayList<>();
-            lbgOnlineSi7021.drainTo(tmp);
+            lbqOnlineSi7021.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(si7021, TYPE_DATABASE);
         }
 
         if(mCheckBoxSkin.isChecked() == true){
             List<SkinResistance> tmp = new ArrayList<>();
-            lbgOnlineSkinResistance.drainTo(tmp);
+            lbqOnlineSkinResistance.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(skinResistance, TYPE_DATABASE);
         }
-        resetCounterAndData(type);
     }
 
-    private boolean getQueueSize(String type) {
+    private boolean isQueueReadyToSend(String type) {
         int counter = 0 ;
         if(type.equals(TYPE_DATABASE))
             counter = mongoDataCounter;
         else
             counter = onlineDataCounter;
-        if(lbgOnlineMax3003.size()< counter && lbgOnlineMax30102.size()< counter &&
-                lbgOnlineSkinResistance.size()< counter && lbgOnlineSi7021.size()< counter )
-            return true;
-        return false;
+        if(lbqOnlineMax3003.size()< counter && lbqOnlineMax30102.size()< counter &&
+                lbqOnlineSkinResistance.size()< counter && lbqOnlineSi7021.size()< counter )
+            return false;
+        return true;
     }
-
-    private void resetCounterAndData(String type) {
-        if (type.equals(TYPE_DATABASE)) {
-            //reset si7021
-            si7021.setCounter(0);
-            si7021.getHumidityByte().setLength(0);
-            si7021.getTemperatureByte().setLength(0);
-            //reset Max3003
-            max3003.setCounter(0);
-            max3003.getEcg().setLength(0);
-            max3003.getRr().setLength(0);
-            //reset max30102
-            max30102.setCounter(0);
-            max30102.getHr().setLength(0);
-            max30102.getSpo2().setLength(0);
-            max30102.getIred().setLength(0);
-            max30102.getRed().setLength(0);
-            //skin resistance
-            skinResistance.setCounter(0);
-            skinResistance.getSkinResistance().setLength(0);
-        } else {
-            oSi7021.setCounter(0);
-            oSi7021.getHumidityByte().setLength(0);
-            oSi7021.getTemperatureByte().setLength(0);
-            //reset Max3003
-            oMax3003.setCounter(0);
-            oMax3003.getEcg().setLength(0);
-            oMax3003.getRr().setLength(0);
-            //reset max30102
-            oMax30102.setCounter(0);
-            oMax30102.getHr().setLength(0);
-            oMax30102.getSpo2().setLength(0);
-            oMax30102.getIred().setLength(0);
-            oMax30102.getRed().setLength(0);
-            //skin resistance
-            oSkinResistance.setCounter(0);
-            oSkinResistance.getSkinResistance().setLength(0);
-        }
-
-    }
-
-    private void dataAppendProcess(int data_type, byte[] array) {
-        if (si7021.getCounter() >= mongoDataCounter && data_type == HUMIDITY)
-            return;
-        if (data_type == HUMIDITY) {//Humidty and Temperature are gathered from same  sensor
-            si7021.setType("environment");
-            si7021.setCounter(si7021.getCounter() + 1);
-            si7021.setHumidityByte(si7021.getHumidityByte().append(bytesToHex(array)));
-            si7021.setDate(new Date());
-        } else if (data_type == TEMPERATURE) {
-            si7021.setTemperatureByte(si7021.getTemperatureByte().append(bytesToHex(array)));
-            si7021.setDate(new Date());
-        } else if (data_type == GSR) {
-            skinResistance.setType("skin");
-            skinResistance.setCounter(skinResistance.getCounter() + 1);
-            skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(array)));
-            skinResistance.setDate(new Date());
-        } else if (data_type == HR) { // HR and SPO2 are gathered from same  sensor
-            max30102.setType("heart");
-            max30102.setCounter(max30102.getCounter() + 1);
-            max30102.setHr(max30102.getHr().append(bytesToHex(array)));
-            max30102.setDate(new Date());
-        } else if (data_type == SPO2) {
-            max30102.setSpo2(max30102.getSpo2().append(bytesToHex(array)));
-            max30102.setDate(new Date());
-        } else if(data_type == IRED){
-            max30102.setIred(max30102.getIred().append(bytesToHex(array)));
-        } else if(data_type == RED){
-            max30102.setRed(max30102.getRed().append(bytesToHex(array)));
-        } else if (data_type == RR) {
-            max3003.setRr(max3003.getRr().append(bytesToHex(array)));
-            max3003.setDate(new Date());
-        } else if (data_type == ECG) {// ECG and RR are gathered from same  sensor
-            max3003.setType("heart");
-            max3003.setCounter(max3003.getCounter() + 1);
-            max3003.setEcg(max3003.getEcg().append(bytesToHex(array)));
-            max3003.setDate(new Date());
-        }
-    }
-
 
     @Override
     protected void onPause() {
@@ -627,45 +725,59 @@ public class DataCollectActivity extends AppCompatActivity {
     public void onRadioButtonClicked(View view) {
         // Is the button now checked?
         boolean checked = ((RadioButton) view).isChecked();
-
         // Check which radio button was clicked
+        swbGraph.removeAllSeries();
         switch(view.getId()) {
             case R.id.rbtOledShutDown:
                 if (checked){
+                    activeRadioButton = RB_CLOSE;
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_SHUT_DOWN);
                 }
                     break;
             case R.id.rbtOledTempAndHumidity:
                 if (checked){
+                    activeRadioButton = RB_SI7021;
+                    swbGraph.addSeries(mSeriesHumidity);
+                    swbGraph.addSeries(mSeriesTemperature);
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_SI7021);
                 }
                     break;
             case R.id.rbtOledGsr:
                 if (checked){
+                    activeRadioButton = RB_SR;
+                    swbGraph.addSeries(mSeriesSkin);
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_GSR);
                 }
                     break;
             case R.id.rbHrSpo2:
                 if (checked){
+                    activeRadioButton = RB_MAX30102;
+                    swbGraph.addSeries(mSeriesMax30102IR);
+                    swbGraph.addSeries(mSeriesMax30102R);
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30102);
                 }
                     break;
             case R.id.rbtOledEcgRr:
                 if (checked){
+                    activeRadioButton = RB_MAX30003;
+                    swbGraph.addSeries(mSeriesMax30003ECG);
+                    //swbGraph.addSeries(mSeriesMax30003RR);
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30003);
                 }
                     break;
             case R.id.rbtOledBle:
                 if (checked){
+                    activeRadioButton = RB_CLOSE;
                     basVar = (BaseActivity) getApplicationContext();
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_BLE);
                 }
                     break;
         }
+
     }
 }

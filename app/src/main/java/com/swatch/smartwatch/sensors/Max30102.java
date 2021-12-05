@@ -9,7 +9,17 @@ public class Max30102 {
     private StringBuilder hr = new StringBuilder();
     private StringBuilder ired = new StringBuilder();
     private StringBuilder red = new StringBuilder();
+    private int redVal = 0;
+    private int iredVal = 0;
     private Date date;
+
+    public int getRedVal() { return redVal; }
+
+    public void setRedVal(int redVal) { this.redVal = redVal; }
+
+    public int getIredVal() { return iredVal; }
+
+    public void setIredVal(int iredVal) { this.iredVal = iredVal; }
 
     public StringBuilder getIred() {
         return ired;
