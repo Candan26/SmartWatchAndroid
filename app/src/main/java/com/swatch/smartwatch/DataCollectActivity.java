@@ -45,6 +45,12 @@ public class DataCollectActivity extends AppCompatActivity {
     private static final String RB_SR = "SkinResistance";
     private static final String RB_CLOSE = "ShotDownOled";
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    private static final int GSR_DEF_VAL =1870 ;
+    private static final short MAX30003_BIT_POSITION = 4;
+    private static final short MAX30102_BIT_POSITION = 5;
+    private static final short SI7021_BIT_POSITION = 6;
+    private static final short SR_BIT_POSITION = 7;
+
     private final String DATA_COLLECT_CHARACTERISTIC_UUID = "24538aee-dd71-11e9-98a9-2a2ae2dbcce4";
     public final String TYPE_DATABASE = "database";
     public final String TYPE_ONLINE = "online";
@@ -95,6 +101,8 @@ public class DataCollectActivity extends AppCompatActivity {
     private int skinResistanceGraphicCounter =0;
     private int onlineDataCounter = 1;
     private int mongoDataCounter = 100;
+
+    private static byte activeSensorByte = (byte) 0xF0;
 
     public static  final byte[]  OLED_STATUS_SHUT_DOWN = new byte[] {6};
     public static  final byte[]  OLED_STATUS_SI7021 = new byte[] {1};
@@ -281,7 +289,7 @@ public class DataCollectActivity extends AppCompatActivity {
         mSeriesSkin.setThickness(2);
         mSeriesSkin.setDrawDataPoints(false);
         mSeriesSkin.setDrawBackground(false);
-        mSeriesSkin.setColor(Color.CYAN);
+        mSeriesSkin.setColor(Color.BLACK);
     }
 
     private void getCharArrayOfData(Byte array[], String hex) {
@@ -489,6 +497,8 @@ public class DataCollectActivity extends AppCompatActivity {
             byte[] tempArray = new byte[0];
             ByteBuffer wrapped;
             if(mCheckBoxTemperatureHumidity.isChecked() == true){
+
+                setBitOfOledBleStatus(SI7021_BIT_POSITION);
                 //Get humidity
                 tempArray = new byte[nbs[HUMIDITY].intValue()];
                 Si7021 si7021 = new Si7021();
@@ -514,8 +524,11 @@ public class DataCollectActivity extends AppCompatActivity {
                 lbqOnlineSi7021.put(si7021);
                 lbqSi7021.put(si7021);
                 Log.d(TAG, "feedQueryFromBle: " + si7021.toString() + " value= " + nba[TEMPERATURE] + " value= " + nba[HUMIDITY]);
+            }else {
+                clearBitOfOledBleStatus(SI7021_BIT_POSITION);
             }
             if(mCheckBoxSkin.isChecked() == true){
+                setBitOfOledBleStatus(SR_BIT_POSITION);
                 //Get GSR data
                 SkinResistance skinResistance = new SkinResistance();
                 skinResistance.setType("skin");
@@ -525,16 +538,21 @@ public class DataCollectActivity extends AppCompatActivity {
                 }
                 wrapped = ByteBuffer.wrap(tempArray); // big-endian by default
                 skinResistance.setSkinResistance(skinResistance.getSkinResistance().append(bytesToHex(tempArray)));
-                nba[GSR] = wrapped.getShort();
-                skinResistance.setSr(nba[GSR].shortValue());
+                short tempShort = wrapped.getShort();
+                //(float)((1024+2*tempShort)*10000)/(512-tempShort);
+                nba[GSR] = tempShort;
+                skinResistance.setSr(nba[GSR].floatValue());
                 skinResistance.setCounter(skinResistance.getCounter()+1);
                 skinResistance.setDate(new Date());
                 lbqOnlineSkinResistance.put(skinResistance);
                 lbqSkinResistance.put(skinResistance);
                 Log.d(TAG, "feedQueryFromBle: "+ skinResistance.toString() + " value= " + nba[GSR]);
+            }else {
+                clearBitOfOledBleStatus(SR_BIT_POSITION);
             }
 
             if(mCheckBoxHrSpo2.isChecked() == true){
+                setBitOfOledBleStatus(MAX30102_BIT_POSITION);
                 //Get Max30102 data
                 Max30102 max30102 = new Max30102();
                 max30102.setType("heart");
@@ -578,9 +596,12 @@ public class DataCollectActivity extends AppCompatActivity {
                 max30102.setDate(new Date());
                 lbqOnlineMax30102.put(max30102);
                 lbqMax30102.put(max30102);
+            }else {
+                clearBitOfOledBleStatus(MAX30102_BIT_POSITION);
             }
 
             if(mCheckBoxEcgRr.isChecked() == true){
+                setBitOfOledBleStatus(MAX30003_BIT_POSITION);
                 //Get max30003 data
                 //RR -> Max3003
                 Max3003 max3003 = new Max3003();
@@ -652,12 +673,22 @@ public class DataCollectActivity extends AppCompatActivity {
                     lbqOnlineMax3003.put(max3003);
                     lbqMax3003.put(max3003);
                 }
+            }else {
+                clearBitOfOledBleStatus(MAX30003_BIT_POSITION);
             }
 
         }catch (Exception ex){
             ex.printStackTrace();
             Log.d(TAG, "feedQueryFromBle: " +ex.getCause());
         }
+    }
+
+    private void setBitOfOledBleStatus(short position) {
+        activeSensorByte |= 1 << position ;
+    }
+
+    private void clearBitOfOledBleStatus(short position) {
+        activeSensorByte &= ~(1 << position);
     }
 
     public static String bytesToHex(byte[] bytes) {
@@ -736,17 +767,25 @@ public class DataCollectActivity extends AppCompatActivity {
         mHandler.removeCallbacks(mTimer1);
         basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID, false);
     }
+    byte setUpperHalfByte(byte orig, byte nibble) {
+        byte res = orig;
+        res &= 0x0F; // Clear out the upper nibble
+        res |= ((nibble ) & 0xF0); // OR in the desired mask
+        return res;
+    }
 
     public void onRadioButtonClicked(View view) {
         // Is the button now checked?
         boolean checked = ((RadioButton) view).isChecked();
         // Check which radio button was clicked
+        if(view.getId()!=R.id.rbtOledShutDown)
         swbGraph.removeAllSeries();
         switch(view.getId()) {
             case R.id.rbtOledShutDown:
                 if (checked){
-                    activeRadioButton = RB_CLOSE;
+                    //activeRadioButton = RB_CLOSE;
                     basVar = (BaseActivity) getApplicationContext();
+                    OLED_STATUS_SHUT_DOWN[0] =  setUpperHalfByte(OLED_STATUS_SHUT_DOWN[0] , activeSensorByte);
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_SHUT_DOWN);
                 }
                     break;
@@ -756,6 +795,7 @@ public class DataCollectActivity extends AppCompatActivity {
                     swbGraph.addSeries(mSeriesHumidity);
                     swbGraph.addSeries(mSeriesTemperature);
                     basVar = (BaseActivity) getApplicationContext();
+                    OLED_STATUS_SI7021[0] = setUpperHalfByte(OLED_STATUS_SI7021[0] , activeSensorByte);
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_SI7021);
                 }
                     break;
@@ -764,6 +804,7 @@ public class DataCollectActivity extends AppCompatActivity {
                     activeRadioButton = RB_SR;
                     swbGraph.addSeries(mSeriesSkin);
                     basVar = (BaseActivity) getApplicationContext();
+                    OLED_STATUS_GSR[0]= setUpperHalfByte(OLED_STATUS_GSR[0] , activeSensorByte);
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_GSR);
                 }
                     break;
@@ -773,6 +814,7 @@ public class DataCollectActivity extends AppCompatActivity {
                     //swbGraph.addSeries(mSeriesMax30102IR);
                     swbGraph.addSeries(mSeriesMax30102R);
                     basVar = (BaseActivity) getApplicationContext();
+                    OLED_STATUS_MAX30102[0]= setUpperHalfByte(OLED_STATUS_MAX30102[0] , activeSensorByte);
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30102);
                 }
                     break;
@@ -782,6 +824,7 @@ public class DataCollectActivity extends AppCompatActivity {
                     swbGraph.addSeries(mSeriesMax30003ECG);
                     //swbGraph.addSeries(mSeriesMax30003RR);
                     basVar = (BaseActivity) getApplicationContext();
+                    OLED_STATUS_MAX30003[0]= setUpperHalfByte(OLED_STATUS_MAX30003[0] , activeSensorByte);
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30003);
                 }
                     break;
@@ -789,6 +832,7 @@ public class DataCollectActivity extends AppCompatActivity {
                 if (checked){
                     activeRadioButton = RB_CLOSE;
                     basVar = (BaseActivity) getApplicationContext();
+                    OLED_STATUS_BLE[0]= setUpperHalfByte(OLED_STATUS_BLE[0] , activeSensorByte);
                     basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_BLE);
                 }
                     break;

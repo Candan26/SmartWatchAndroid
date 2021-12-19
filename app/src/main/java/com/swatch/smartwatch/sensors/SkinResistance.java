@@ -8,11 +8,11 @@ public class SkinResistance {
     private int counter=0;
     private String type = "";
     private StringBuilder skinResistance = new StringBuilder();
-    private Short sr = 0;
+    private Float sr = new Float(0);
     private Date date;
 
-    public Short getSr() { return sr;  }
-    public void setSr( Short sr) { this.sr = sr;   }
+    public Float getSr() { return sr;  }
+    public void setSr( Float sr) { this.sr = sr;   }
 
     public int getCounter() {
         return counter;
