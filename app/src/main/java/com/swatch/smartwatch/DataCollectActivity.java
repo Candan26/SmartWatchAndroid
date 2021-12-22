@@ -310,50 +310,53 @@ public class DataCollectActivity extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
-                String str = basVar.dataFromNotification;
-                str = str.replace(" ", "");
-                mTextView.setText("byteArray : " + str);
-                Log.d("TEMP", "length "+str.toCharArray().length);
-                //String s = basVar.dataFromNotification.substring(0, 2);
-                //byte b = Byte.valueOf(s, 16);
-                Byte[] array = new Byte[450];
-                Arrays.fill(array, (byte) 0);
-                getCharArrayOfData(array, str);
-               // fillDataBaseData(array);
-                feedQueryFromBle(array);
-                printGraphOfData();
-                StringBuilder sb = new StringBuilder();
-                sb.append("HUM: " + nba[HUMIDITY].floatValue() + " ");
-                sb.append("TEMP: " + nba[TEMPERATURE].floatValue() + "\n");
-                sb.append("GSR: " + nba[GSR].shortValue() + "\n");
-                sb.append("HR: " + nba[HR] + " ");
-                sb.append("SPO2: " + nba[SPO2] + " ");
-                sb.append("IRED: " + nba[IRED] + " ");
-                sb.append("RED: " + nba[RED] + "\n");
-                sb.append("RR_COUNTER: " + nba[RR_COUNTER] + " ");
-                sb.append("RR: " + nba[RR] + " ");
-                sb.append("BPM_COUNTER: " + nba[BPM_COUNTER] + " ");
-                sb.append("BPM: " + nba[BPM].intValue() + " ");
-                sb.append("ECG_COUNTER: " + nba[ECG_COUNTER] + "\n");
+                String str = (String) BaseActivity.queueBle.poll();
+                //String str = basVar.dataFromNotification;
+                if(str !=null){
+                    str = str.replace(" ", "");
+                    mTextView.setText("byteArray : " + str);
+                    Log.d("TEMP", "length "+str.toCharArray().length);
+                    //String s = basVar.dataFromNotification.substring(0, 2);
+                    //byte b = Byte.valueOf(s, 16);
+                    Byte[] array = new Byte[450];
+                    Arrays.fill(array, (byte) 0);
+                    getCharArrayOfData(array, str);
+                    // fillDataBaseData(array);
+                    feedQueryFromBle(array);
+                    printGraphOfData();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("HUM: " + nba[HUMIDITY].floatValue() + " ");
+                    sb.append("TEMP: " + nba[TEMPERATURE].floatValue() + "\n");
+                    sb.append("GSR: " + nba[GSR].shortValue() + "\n");
+                    sb.append("HR: " + nba[HR] + " ");
+                    sb.append("SPO2: " + nba[SPO2] + " ");
+                    sb.append("IRED: " + nba[IRED] + " ");
+                    sb.append("RED: " + nba[RED] + "\n");
+                    sb.append("RR_COUNTER: " + nba[RR_COUNTER] + " ");
+                    sb.append("RR: " + nba[RR] + " ");
+                    sb.append("BPM_COUNTER: " + nba[BPM_COUNTER] + " ");
+                    sb.append("BPM: " + nba[BPM].intValue() + " ");
+                    sb.append("ECG_COUNTER: " + nba[ECG_COUNTER] + "\n");
 
-                try {
-                    if(mSwitchSaveData.isChecked()){
-                        pushDataOnDatabase(sb);
+                    try {
+                        if(mSwitchSaveData.isChecked()){
+                            pushDataOnDatabase(sb);
+                        }
+                        if(mSwitchOnlineData.isChecked()){
+                            pushDataOnOnline(sb);
+                        }
+                        if (!mSwitchOnlineData.isChecked() && !mSwitchOnlineData.isChecked()){
+                            clearQueues();
+                        }
+                    } catch (Exception ex) {
+                        Log.d(TAG, ex.toString());
                     }
-                    if(mSwitchOnlineData.isChecked()){
-                        pushDataOnOnline(sb);
-                    }
-                    if (!mSwitchOnlineData.isChecked() && !mSwitchOnlineData.isChecked()){
-                        clearQueues();
-                    }
-
-                } catch (Exception ex) {
-                    Log.d(TAG, ex.toString());
+                    mTextView.setText(sb.toString() + "\n");
+                }else{
+                    //mTextView.setText("Queue is empty \n");
                 }
 
-                mTextView.setText(sb.toString() + "\n");
-                mHandler.postDelayed(this, 105);
-
+                mHandler.postDelayed(this, 90);
             }
         };
         mHandler.postDelayed(mTimer1, 300);

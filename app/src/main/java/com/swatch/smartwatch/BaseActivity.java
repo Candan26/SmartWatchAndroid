@@ -24,6 +24,7 @@ import com.swatch.smartwatch.bluetooth.SampleGattAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class BaseActivity extends Application {
 
@@ -45,6 +46,7 @@ public class BaseActivity extends Application {
     public BluetoothLeService mBluetoothLeService;
     private HashMap<String, BluetoothGattCharacteristic> bleCharHashMap = new HashMap<String, BluetoothGattCharacteristic>();
 
+    public static LinkedBlockingQueue queueBle = new LinkedBlockingQueue();
 
     @Override
     public void onCreate() {
@@ -140,6 +142,11 @@ public class BaseActivity extends Application {
                 //displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 Log.v(TAG,intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
                 dataFromNotification =intent.getStringExtra(BluetoothLeService.EXTRA_CHAR_DATA);
+                try {
+                    queueBle.put(dataFromNotification);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 //Log.d(TAG,"Incoming from intent data" +dataFromNotification);
             }
         }
