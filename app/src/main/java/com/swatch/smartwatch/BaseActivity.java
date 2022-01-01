@@ -21,6 +21,7 @@ import android.widget.SimpleExpandableListAdapter;
 import com.swatch.smartwatch.bluetooth.BluetoothLeService;
 import com.swatch.smartwatch.bluetooth.SampleGattAttributes;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -96,9 +97,12 @@ public class BaseActivity extends Application {
     public  void setNotification(String characteristic_uuid, boolean status){
         BluetoothGattCharacteristic dataCharacteristic= bleCharHashMap.get(characteristic_uuid);
         mBluetoothLeService.setCharacteristicNotification(dataCharacteristic,status);
+
     }
 
     public  boolean sendCharacteristic(String characteristic_uuid, byte[] character){
+
+        Log.d("BLE_WRITE", "Char "+ new BigInteger(1, character).toString(16));
         BluetoothGattCharacteristic dataCharacteristic= bleCharHashMap.get(characteristic_uuid);
         dataCharacteristic.setValue(character);
         return mBluetoothLeService.writeCharacteristic(dataCharacteristic);

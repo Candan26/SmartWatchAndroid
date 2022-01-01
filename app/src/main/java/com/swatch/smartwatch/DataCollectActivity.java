@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -110,6 +111,8 @@ public class DataCollectActivity extends AppCompatActivity {
     public static  final byte[]  OLED_STATUS_MAX30102 = new byte[] {3};
     public static  final byte[]  OLED_STATUS_MAX30003 = new byte[] {4};
     public static  final byte[]  OLED_STATUS_BLE = new byte[] {5};
+    public static byte OLED_STATUS_BYTE = 0x00;
+
 
     public static Number[] nba = {HUMIDITY, TEMPERATURE, GSR, HR, SPO2, IRED, RED,  RR_COUNTER, RR, BPM_COUNTER, BPM, ECG_COUNTER, ECG};
     public static Number[] nbs = {4,        4,           2,   1,  1,    4,    4,    1,          20, 1,           20,  2,           320};//size of each data
@@ -139,6 +142,7 @@ public class DataCollectActivity extends AppCompatActivity {
         setContentView(R.layout.activity_data_collect);
         initViewWidgets();
         setCheckBoxDefaultPosition();
+        initCheckBoxListeners();
         setSwitchDefaultPosition();
         //setImageViewForEmailSending();
         setBleDefaultParams();
@@ -146,6 +150,61 @@ public class DataCollectActivity extends AppCompatActivity {
         initWebServer();
         adjustGraphicsProperties(swbGraph);
         plotData();
+    }
+
+    private void initCheckBoxListeners() {
+        mCheckBoxEcgRr.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    setBitOfOledBleStatus(MAX30003_BIT_POSITION);
+                }else {
+                    clearBitOfOledBleStatus(MAX30003_BIT_POSITION);
+                }
+                basVar = (BaseActivity) getApplicationContext();
+                basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+            }
+        });
+
+        mCheckBoxHrSpo2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    setBitOfOledBleStatus(MAX30102_BIT_POSITION);
+                }else {
+                    clearBitOfOledBleStatus(MAX30102_BIT_POSITION);
+                }
+                basVar = (BaseActivity) getApplicationContext();
+                basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+            }
+        });
+
+        mCheckBoxSkin.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    setBitOfOledBleStatus(SR_BIT_POSITION);
+                }else {
+                    clearBitOfOledBleStatus(SR_BIT_POSITION);
+                }
+                basVar = (BaseActivity) getApplicationContext();
+                basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+            }
+        });
+
+        mCheckBoxTemperatureHumidity.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    setBitOfOledBleStatus(SI7021_BIT_POSITION);
+                }else {
+                    clearBitOfOledBleStatus(SI7021_BIT_POSITION);
+                }
+                basVar = (BaseActivity) getApplicationContext();
+                basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+            }
+        });
+
     }
 
     private void initWebServer() {
@@ -783,63 +842,71 @@ public class DataCollectActivity extends AppCompatActivity {
         // Check which radio button was clicked
         if(view.getId()!=R.id.rbtOledShutDown)
         swbGraph.removeAllSeries();
-        switch(view.getId()) {
-            case R.id.rbtOledShutDown:
-                if (checked){
-                    //activeRadioButton = RB_CLOSE;
-                    basVar = (BaseActivity) getApplicationContext();
-                    OLED_STATUS_SHUT_DOWN[0] =  setUpperHalfByte(OLED_STATUS_SHUT_DOWN[0] , activeSensorByte);
-                    basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_SHUT_DOWN);
+        basVar =  (BaseActivity)getApplicationContext();
+        basVar.setNotification(DATA_COLLECT_CHARACTERISTIC_UUID,true);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                switch(view.getId()) {
+                    case R.id.rbtOledShutDown:
+                        if (checked){
+                            //activeRadioButton = RB_CLOSE;
+                            basVar = (BaseActivity) getApplicationContext();
+                            activeSensorByte =  setUpperHalfByte(OLED_STATUS_SHUT_DOWN[0] , activeSensorByte);
+                            basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+                        }
+                        break;
+                    case R.id.rbtOledTempAndHumidity:
+                        if (checked){
+                            activeRadioButton = RB_SI7021;
+                            swbGraph.addSeries(mSeriesHumidity);
+                            swbGraph.addSeries(mSeriesTemperature);
+                            basVar = (BaseActivity) getApplicationContext();
+                            activeSensorByte = setUpperHalfByte(OLED_STATUS_SI7021[0] , activeSensorByte);
+                            basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+                        }
+                        break;
+                    case R.id.rbtOledGsr:
+                        if (checked){
+                            activeRadioButton = RB_SR;
+                            swbGraph.addSeries(mSeriesSkin);
+                            basVar = (BaseActivity) getApplicationContext();
+                            activeSensorByte = setUpperHalfByte(OLED_STATUS_GSR[0] , activeSensorByte);
+                            basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+                        }
+                        break;
+                    case R.id.rbHrSpo2:
+                        if (checked){
+                            activeRadioButton = RB_MAX30102;
+                            //swbGraph.addSeries(mSeriesMax30102IR);
+                            swbGraph.addSeries(mSeriesMax30102R);
+                            basVar = (BaseActivity) getApplicationContext();
+                            activeSensorByte = setUpperHalfByte(OLED_STATUS_MAX30102[0] , activeSensorByte);
+                            basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+                        }
+                        break;
+                    case R.id.rbtOledEcgRr:
+                        if (checked){
+                            activeRadioButton = RB_MAX30003;
+                            swbGraph.addSeries(mSeriesMax30003ECG);
+                            //swbGraph.addSeries(mSeriesMax30003RR);
+                            basVar = (BaseActivity) getApplicationContext();
+                            activeSensorByte = setUpperHalfByte(OLED_STATUS_MAX30003[0] , activeSensorByte);
+                            basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+                        }
+                        break;
+                    case R.id.rbtOledBle:
+                        if (checked){
+                            activeRadioButton = RB_CLOSE;
+                            basVar = (BaseActivity) getApplicationContext();
+                            activeSensorByte = setUpperHalfByte(OLED_STATUS_BLE[0] , activeSensorByte);
+                            basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, new byte[]{activeSensorByte});
+                        }
+                        break;
                 }
-                    break;
-            case R.id.rbtOledTempAndHumidity:
-                if (checked){
-                    activeRadioButton = RB_SI7021;
-                    swbGraph.addSeries(mSeriesHumidity);
-                    swbGraph.addSeries(mSeriesTemperature);
-                    basVar = (BaseActivity) getApplicationContext();
-                    OLED_STATUS_SI7021[0] = setUpperHalfByte(OLED_STATUS_SI7021[0] , activeSensorByte);
-                    basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_SI7021);
-                }
-                    break;
-            case R.id.rbtOledGsr:
-                if (checked){
-                    activeRadioButton = RB_SR;
-                    swbGraph.addSeries(mSeriesSkin);
-                    basVar = (BaseActivity) getApplicationContext();
-                    OLED_STATUS_GSR[0]= setUpperHalfByte(OLED_STATUS_GSR[0] , activeSensorByte);
-                    basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_GSR);
-                }
-                    break;
-            case R.id.rbHrSpo2:
-                if (checked){
-                    activeRadioButton = RB_MAX30102;
-                    //swbGraph.addSeries(mSeriesMax30102IR);
-                    swbGraph.addSeries(mSeriesMax30102R);
-                    basVar = (BaseActivity) getApplicationContext();
-                    OLED_STATUS_MAX30102[0]= setUpperHalfByte(OLED_STATUS_MAX30102[0] , activeSensorByte);
-                    basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30102);
-                }
-                    break;
-            case R.id.rbtOledEcgRr:
-                if (checked){
-                    activeRadioButton = RB_MAX30003;
-                    swbGraph.addSeries(mSeriesMax30003ECG);
-                    //swbGraph.addSeries(mSeriesMax30003RR);
-                    basVar = (BaseActivity) getApplicationContext();
-                    OLED_STATUS_MAX30003[0]= setUpperHalfByte(OLED_STATUS_MAX30003[0] , activeSensorByte);
-                    basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_MAX30003);
-                }
-                    break;
-            case R.id.rbtOledBle:
-                if (checked){
-                    activeRadioButton = RB_CLOSE;
-                    basVar = (BaseActivity) getApplicationContext();
-                    OLED_STATUS_BLE[0]= setUpperHalfByte(OLED_STATUS_BLE[0] , activeSensorByte);
-                    basVar.sendCharacteristic(DATA_COLLECT_CHARACTERISTIC_UUID, OLED_STATUS_BLE);
-                }
-                    break;
-        }
+            }
+        },500);
+
 
     }
 }
