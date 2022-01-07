@@ -100,7 +100,7 @@ public class DataCollectActivity extends AppCompatActivity {
     private int max30102GraphicCounter =0;
     private int Si7021GraphicCounter =0;
     private int skinResistanceGraphicCounter =0;
-    private int onlineDataCounter = 1;
+    private int onlineDataCounter = 10;
     private int mongoDataCounter = 100;
 
     private static byte activeSensorByte = (byte) 0xF0;
@@ -144,12 +144,30 @@ public class DataCollectActivity extends AppCompatActivity {
         setCheckBoxDefaultPosition();
         initCheckBoxListeners();
         setSwitchDefaultPosition();
+        initSwitchListeners();
         //setImageViewForEmailSending();
         setBleDefaultParams();
         setOnlineDataMongoDbDataSendCounterAndObj();
         initWebServer();
         adjustGraphicsProperties(swbGraph);
         plotData();
+    }
+
+    private void initSwitchListeners() {
+        mSwitchOnlineData.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked)
+                mSwitchSaveData.setChecked(false);
+            }
+        });
+        mSwitchSaveData.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked)
+                    mSwitchOnlineData.setChecked(false);
+            }
+        });
     }
 
     private void initCheckBoxListeners() {
@@ -399,12 +417,20 @@ public class DataCollectActivity extends AppCompatActivity {
 
                     try {
                         if(mSwitchSaveData.isChecked()){
-                            pushDataOnDatabase(sb);
+                            new Handler().postDelayed(new Runnable() {
+                                public void run() {
+                                    pushDataOnDatabase(sb);
+                                }
+                            }, 10);
                         }
                         if(mSwitchOnlineData.isChecked()){
-                            pushDataOnOnline(sb);
+                            new Handler().postDelayed(new Runnable() {
+                                public void run() {
+                                    pushDataOnOnline(sb);
+                                }
+                            }, 10);
                         }
-                        if (!mSwitchOnlineData.isChecked() && !mSwitchOnlineData.isChecked()){
+                        if (!mSwitchOnlineData.isChecked() && !mSwitchSaveData.isChecked()){
                             clearQueues();
                         }
                     } catch (Exception ex) {
@@ -787,6 +813,8 @@ public class DataCollectActivity extends AppCompatActivity {
             lbqOnlineMax3003.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(max3003, TYPE_DATABASE);
+        }else{
+            lbqOnlineMax3003.clear();
         }
 
         if(mCheckBoxHrSpo2.isChecked() == true){
@@ -794,6 +822,8 @@ public class DataCollectActivity extends AppCompatActivity {
             lbqOnlineMax30102.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(max30102, TYPE_DATABASE);
+        }else {
+            lbqOnlineMax30102.clear();
         }
 
         if(mCheckBoxTemperatureHumidity.isChecked() == true){
@@ -801,6 +831,8 @@ public class DataCollectActivity extends AppCompatActivity {
             lbqOnlineSi7021.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(si7021, TYPE_DATABASE);
+        }else {
+            lbqOnlineSi7021.clear();
         }
 
         if(mCheckBoxSkin.isChecked() == true){
@@ -808,6 +840,8 @@ public class DataCollectActivity extends AppCompatActivity {
             lbqOnlineSkinResistance.drainTo(tmp);
             tmp.stream().forEach(s -> {sw.setSensorInfo(s,type);});
             //sw.setSensorInfo(skinResistance, TYPE_DATABASE);
+        }else {
+            lbqOnlineSkinResistance.clear();
         }
     }
 

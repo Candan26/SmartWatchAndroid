@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 
@@ -74,7 +73,7 @@ public class SmartWatchServer extends Service {
 
     String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
-
+    private RequestQueue queue;
     public SmartWatchServer(Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         Map<String, String> keyValues = (Map<String, String>) preferences.getAll();
@@ -88,7 +87,7 @@ public class SmartWatchServer extends Service {
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void setSensorInfo(Max3003 max3003 , String type){
-        RequestQueue queue = Volley.newRequestQueue(mContext);
+        requestAvailableVolleyQueue();
         String subPageUrl = "";
         if(type.equals("online"))
             subPageUrl = Max3003SubPageURLOnline;
@@ -109,7 +108,7 @@ public class SmartWatchServer extends Service {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void setSensorInfo(Max30102 max30102 , String type){
-        RequestQueue queue = Volley.newRequestQueue(mContext);
+        requestAvailableVolleyQueue();
         String subPageUrl = "";
         if(type.equals("online"))
             subPageUrl = Max30102SubPageURLOnline;
@@ -130,9 +129,15 @@ public class SmartWatchServer extends Service {
         sendMessageToQueue(queue, url, params);
     }
 
+    private void requestAvailableVolleyQueue() {
+        if (queue == null) {
+            queue = Volley.newRequestQueue(mContext);
+        }
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void setSensorInfo(Si7021 si7021 , String type){
-        RequestQueue queue = Volley.newRequestQueue(mContext);
+        requestAvailableVolleyQueue();
         String subPageUrl = "";
         if(type.equals("online"))
             subPageUrl = Si7021SubPageURLOnline;
@@ -152,7 +157,7 @@ public class SmartWatchServer extends Service {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void setSensorInfo(SkinResistance skinResistance , String type){
-        RequestQueue queue = Volley.newRequestQueue(mContext);
+        requestAvailableVolleyQueue();
         String subPageUrl = "";
         if(type.equals("online"))
             subPageUrl = SkinSensorSubPageURLOnline;
