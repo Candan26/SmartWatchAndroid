@@ -101,7 +101,7 @@ public class DataCollectActivity extends AppCompatActivity {
     private int Si7021GraphicCounter =0;
     private int skinResistanceGraphicCounter =0;
     private int onlineDataCounter = 10;
-    private int mongoDataCounter = 100;
+    private int mongoDataCounter = 1;
 
     private static byte activeSensorByte = (byte) 0xF0;
 
@@ -421,14 +421,14 @@ public class DataCollectActivity extends AppCompatActivity {
                                 public void run() {
                                     pushDataOnDatabase(sb);
                                 }
-                            }, 10);
+                            }, 100);
                         }
                         if(mSwitchOnlineData.isChecked()){
                             new Handler().postDelayed(new Runnable() {
                                 public void run() {
                                     pushDataOnOnline(sb);
                                 }
-                            }, 10);
+                            }, 100);
                         }
                         if (!mSwitchOnlineData.isChecked() && !mSwitchSaveData.isChecked()){
                             clearQueues();
