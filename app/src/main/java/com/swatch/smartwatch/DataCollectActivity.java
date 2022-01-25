@@ -311,6 +311,8 @@ public class DataCollectActivity extends AppCompatActivity {
         swbGraph.getViewport().setMaxX(MAX_VALUE_OF_X_AXIS);
         swbGraph.getViewport().setXAxisBoundsManual(true);
         swbGraph.getViewport().setDrawBorder(true);
+        swbGraph.setTitle("Smart Wrist Band Graphs");
+
     }
 
     private void initDataGraphSeries() {
@@ -710,7 +712,7 @@ public class DataCollectActivity extends AppCompatActivity {
                 }
                 //BPM -> Max3003
                 if(array[nbo[BPM_COUNTER].intValue()].intValue()>0){
-                    nba[RR_COUNTER] =  (array[nbo[BPM_COUNTER].intValue()]&0xff);//wrapped.getInt();
+                    nba[BPM_COUNTER] =  (array[nbo[BPM_COUNTER].intValue()]&0xff);//wrapped.getInt();
                     if(nba[BPM_COUNTER].intValue() != 0){
                         tempArray = new byte[nba[BPM_COUNTER].intValue()*4];
                         for(int j = 0; j< nba[BPM_COUNTER].intValue()*4; j++){
